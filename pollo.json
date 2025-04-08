@@ -1,0 +1,8 @@
+{
+    "usuario": {
+        "nombre": "julian",
+        "apellido": "gomez",
+        "rol": "Admin",
+        "password": "admin123"
+    }
+}
