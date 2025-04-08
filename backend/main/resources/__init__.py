@@ -1,0 +1,10 @@
+from .pollo import Users as UsersResource
+from .pollo import User as UserResource
+from .pollo import Notificaciones as NotificacionesResource
+from .pollo import Valoracion as ValoracionResource
+from .pollo import Products as ProductResource
+from .pollo import Product as ProductsResource
+from .pollo import LogIn as LogInResource
+from .pollo import LogOut as LogOutResource
+from .pollo import Pedidos as PedidosResource
+from .pollo import Pedido as PedidoResource
