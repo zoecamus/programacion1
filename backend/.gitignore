@@ -7,3 +7,5 @@ pyvenv.cfg
 /venv
 /tutorian-env
 /env_pr
+venv/
+venv
