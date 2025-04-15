@@ -1,10 +1,13 @@
-from flask import request, session
+from flask import request, session, jsonify
 from flask_restful import Resource
+from main.models import Usuariosmodel
+from main import db
+
 
 USUARIOS = {
-    1: {'nombre': 'julian', 'apellido': 'gomez', 'rol': 'Admin', 'password': 'admin123'},
-    2: {'nombre': 'catalina', 'apelido': 'rodriguez', 'rol': 'usuario', 'password': 'cat123'},
-    3: {'nombre': 'maria', 'apelido': 'perez', 'rol': 'Encargado', 'password': 'maria456'}
+    1: {'nombre': 'julian', 'apellido': 'gomez', 'rol': 'admin', 'password': 'admin123'},
+    2: {'nombre': 'catalina', 'apelido': 'rodriguez', 'rol': 'cliente', 'password': 'cat123'},
+    3: {'nombre': 'maria', 'apelido': 'perez', 'rol': 'encargado', 'password': 'maria456'}
 }
 
 PRODUCTS = {}
@@ -13,53 +16,87 @@ VALORACIONES = []
 
 class Users(Resource):
     def get(self):
-        if not request.is_json:
-            return {'error': 'Se esperaba otro tipo decontenido'}, 400
-        data = request.get_json()
-        user_id = data.get('user_id')
+        usuarios = db.session.query(Usuariosmodel).all()
+        return jsonify ([usuario.to_json() for usuario in usuarios])
+    
+        """user_id = request.headers.get('user_id') or request.headers.get('User_Id')
+        if not user_id:
+            return {'error': 'Falta el ID del usuario autenticado'}, 400
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            return {'error': 'ID inválido'}, 400
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
+        if usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para ver usuarios'}, 400
-        return {'usuarios': list(USUARIOS.values())}
+        return {'usuarios': list(USUARIOS.values())}"""
+
+
 
     def post(self):
+        usuario = Usuariosmodel.from_json(request.get_json())
+        db.session.add(usuario)
+        db.session.commit()
+        return 'OK', 201
+    
+        """if not request.is_json:
+            return {'error': 'Se esperaba contenido JSON'}, 400
         data = request.get_json()
-        user_id = data.get('user_id')
+        try:
+            user_id = int(data.get('user_id'))
+        except (ValueError, TypeError):
+            return {'error': 'ID inválido'}, 400
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
+        if usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para crear usuarios'}, 400
-        id = max(USUARIOS.keys()) + 1
         nombre = data.get('nombre')
         apellido = data.get('apellido')
         rol = data.get('rol')
         password = data.get('password')
-        if not nombre or not apellido or not rol or not password:
+        if not all([nombre, apellido, rol, password]):
             return {'error': 'Faltan datos'}, 400
-        if rol not in ['Admin', 'Encargado', 'Usuario']:
-            return {'error': 'Rol no encontraado'}, 400
-        USUARIOS[id] = {'nombre': nombre, 'apellido': apellido, 'rol': rol, 'password': password}
-        return {'message': 'El usuario ha sido creado'}, 201
+        if rol not in ['admin', 'encargado', 'cliente']:
+            return {'error': 'Rol no permitido'}, 400
+        nuevo_id = max(USUARIOS.keys()) + 1
+        USUARIOS[nuevo_id] = {
+            'nombre': nombre,
+            'apellido': apellido,
+            'rol': rol,
+            'password': password
+        }
+
+        return {'message': 'El usuario ha sido creado'}, 201"""
 
 class User(Resource):
     def get(self, id):
-        if not request.is_json:
-            return {'error': 'Se esperaba contenido JSON'}, 400
-        data = request.get_json()
-        user_id = data.get('user_id')
-        usuario = USUARIOS.get(user_id)
-        if not usuario:
-            return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
-            return {'error': 'No tiene permisos para ver usuarios'}, 403
-        id = int(id)
-        usuario_objetivo = USUARIOS.get(id)
-        if not usuario_objetivo:
-            return {'error': 'Usuario solicitado no existe'}, 404
-        return {'usuario': usuario_objetivo}, 200
+        user_header = (request.headers.get('user_id') or 
+                       request.headers.get('User-Id') or 
+                       request.headers.get('X-User-Id'))
+        if not user_header:
+            return {"error": "Falta el ID del usuario autenticado"}, 400
+        try:
+            auth_user_id = int(user_header)
+        except ValueError:
+            return {"error": "ID inválido"}, 400
+        auth_user = USUARIOS.get(auth_user_id)
+        if not auth_user:
+            return {"error": "Usuario no encontrado"}, 404
+        if auth_user.get('rol', '').lower() != 'admin':
+            return {"error": "No tiene permisos para ver usuarios"}, 403
+        try:
+            target_id = int(id)
+        except ValueError:
+            return {"error": "ID inválido"}, 400
+        target_user = USUARIOS.get(target_id)
+        if not target_user:
+            return {"error": "Usuario no encontrado"}, 404
+        return {"usuario": target_user}, 200
+       
+
 
     def put(self, id):
         data = request.get_json()
@@ -67,7 +104,7 @@ class User(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
+        if usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para editar usuarios'}, 400
         nombre = data.get('nombre')
         apellido = data.get('apellido')
@@ -84,13 +121,13 @@ class User(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] not in ['Admin', 'Encargado']:
+        if usuario['rol'] not in ['admin', 'encargado']:
             return {'error': 'No tiene permisos para eliminar usuarios'}, 400
-        if usuario['rol'] == 'Admin':
+        if usuario['rol'] == 'admin':
             del USUARIOS[int(id)]
             return {'message': 'Usuario eliminado'}, 200
         else:
-            USUARIOS[int(id)]['rol'] = 'Encargado'
+            USUARIOS[int(id)]['rol'] = 'encargado'
             return {'message': 'Usuario eliminado'}, 200
 
 class Products(Resource):
@@ -110,7 +147,7 @@ class Products(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
+        if usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para agregar productos'}, 403
         nuevo_id = max(PRODUCTS.keys(), default=0) + 1
         nombre = data.get('nombre')
@@ -136,7 +173,7 @@ class Product(Resource):
         data = request.get_json()
         user_id = data.get('user_id')
         usuario = USUARIOS.get(user_id)
-        if not usuario or usuario['rol'] != 'Admin':
+        if not usuario or usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para editar productos'}, 403
         producto = PRODUCTS.get(int(product_id))
         if not producto:
@@ -148,7 +185,7 @@ class Product(Resource):
         data = request.get_json()
         user_id = data.get('user_id')
         usuario = USUARIOS.get(user_id)
-        if not usuario or usuario['rol'] != 'Admin':
+        if not usuario or usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para eliminar productos'}, 403
         if int(product_id) not in PRODUCTS:
             return {'error': 'Producto no encontrado'}, 404
@@ -187,7 +224,7 @@ class Pedidos(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] not in ['Admin', 'Encargado']:
+        if usuario['rol'] not in ['admin', 'encargado']:
             return {'error': 'No tiene permisos para ver pedidos'}, 403
         return {'pedidos': PEDIDOS}, 200
 
@@ -263,7 +300,7 @@ class Notificaciones(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] not in ['Admin', 'Encargado']:
+        if usuario['rol'] not in ['admin', 'encargado']:
             return {'error': 'No tiene permisos para enviar notificaciones'}, 403
         if tipo == 'notificacion':
             return {'message': 'Notificacion enviada'}, 200
@@ -295,6 +332,6 @@ class Valoracion(Resource):
         usuario = USUARIOS.get(user_id)
         if not usuario:
             return {'error': 'Usuario no encontrado'}, 404
-        if usuario['rol'] != 'Admin':
+        if usuario['rol'] != 'admin':
             return {'error': 'No tiene permisos para ver valoraciones'}, 403
         return {'valoraciones': VALORACIONES}, 200
