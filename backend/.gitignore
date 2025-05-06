@@ -5,4 +5,8 @@
 pyvenv.cfg
 .env
 venv/
+./venv
+*.json
+*.pyc
+__pycache__/
 
