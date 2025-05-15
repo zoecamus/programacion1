@@ -1,9 +1,0 @@
-from .pollo1 import Usuarios as Usuariomodel
-from .pollo1 import Productos as Productomodel
-from .pollo1 import Pedidos as Pedidomodel
-from .pollo1 import Valoraciones as Valoracionesmodel
-from .pollo1 import Notificaciones as Notificacionesmodel
-from .pollo1 import Categorias as Categoriamodel
-from .pollo1 import Facturas as Facturamodel
-from .pollo1 import Factura_Producto as Factura_Productomodel
-from .pollo1 import Pedido_Producto as Pedido_Productomodel
