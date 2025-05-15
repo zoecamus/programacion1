@@ -1,0 +1,9 @@
+from .usuarios import Usuarios as Usuariomodel
+from .productos import Productos as Productomodel
+from .pedidos import Pedidos as Pedidomodel
+from .valoraciones import Valoraciones as Valoracionesmodel
+from .notificaciones import Notificaciones as Notificacionesmodel
+from .categorias import Categorias as Categoriamodel
+from .facturas import Facturas as Facturamodel
+from .factura_producto import Factura_Producto as Factura_Productomodel
+from .pedido_producto import Pedido_Producto as Pedido_Productomodel
