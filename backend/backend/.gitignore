@@ -6,6 +6,7 @@ pyvenv.cfg
 .env
 venv/
 ./venv
+*.json
 *.pyc
 __pycache__/
 env/

@@ -35,15 +35,7 @@ def create_app():
     print ("base de datos creada en:", os.path.abspath(os.path.join(db_path, db_name)))
     db.init_app(app)
     with app.app_context():
-        from main.models.usuarios import Usuarios
-        from main.models.productos import Productos
-        from main.models.pedidos import Pedidos
-        from main.models.valoraciones import Valoraciones
-        from main.models.notificaciones import Notificaciones
-        from main.models.categorias import Categorias
-        from main.models.facturas import Facturas
-        from main.models.factura_producto import Factura_Producto
-        from main.models.pedido_producto import Pedido_Producto
+        from main.models.pollo1 import Usuarios, Productos, Pedidos, Valoraciones, Notificaciones, Categorias, Facturas, Factura_Producto, Pedido_Producto
         db.create_all() 
 # importá todos los modelos que necesites 
 
