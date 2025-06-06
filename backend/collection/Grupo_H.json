@@ -16,7 +16,7 @@
 						"auth": {
 							"type": "noauth"
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -29,15 +29,25 @@
 								"type": "text"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"evita@gmail.com\",\n    \"password\": \"freetomasita\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "http://localhost:7000/users",
+							"raw": "http://localhost:7000/auth/login",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "7000",
 							"path": [
-								"users"
+								"auth",
+								"login"
 							]
 						}
 					},
@@ -59,12 +69,13 @@
 							{
 								"key": "User-Id",
 								"value": "evamodarelli@gmail.com",
-								"type": "text"
+								"type": "text",
+								"disabled": true
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "    {\n        \"apellido\": \"Torres\",\n        \"id_usuario\": \"micatorres@gmail.com\",\n        \"nombre\": \"Micaela\",\n        \"password\": \"micatorr3s\",\n        \"rol\": \"Cliente\",\n        \"telefono\": \"2616483754\"\n    }",
+							"raw": "{\n    \"email\": \"juliangomez@gmail.com\",\n    \"password\": \"admin123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -72,14 +83,15 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:7000/users",
+							"raw": "http://localhost:7000/auth/login",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
 							"port": "7000",
 							"path": [
-								"users"
+								"auth",
+								"login"
 							]
 						}
 					},
@@ -1468,6 +1480,109 @@
 							"port": "7000",
 							"path": [
 								"valoraciones"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "http://localhost:7000/auth/login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "User-Id",
+								"value": "evamodarelli@gmail.com",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc0OTIzMzY2NywianRpIjoiN2I4NzA0NGEtYTAwMy00ZmMyLWI1NTQtNzQzNzM4MjQyZDQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6ImV2aXRhQGdtYWlsLmNvbSIsIm5iZiI6MTc0OTIzMzY2NywiY3NyZiI6IjAzMDU4ZWQ1LWYxYTUtNDU4Yy05NzAwLWZkMzQzMTk4YWQxYiIsImV4cCI6MTc0OTIzNzI2Nywicm9sIjoiQWRtaW5pc3RyYWRvciIsImlkIjoiZXZpdGFAZ21haWwuY29tIiwiZW1haWwiOiJldml0YUBnbWFpbC5jb20ifQ.kxL2kqvxsQhFyNsgpVlYgEsYFKYUboQ7PKAORyz0BTI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"evita@gmail.com\",\n    \"password\": \"freetomasita\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:7000/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7000",
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://localhost:7000/auth/register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "User-Id",
+								"value": "evamodarelli@gmail.com",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc0OTIzMzY2NywianRpIjoiN2I4NzA0NGEtYTAwMy00ZmMyLWI1NTQtNzQzNzM4MjQyZDQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6ImV2aXRhQGdtYWlsLmNvbSIsIm5iZiI6MTc0OTIzMzY2NywiY3NyZiI6IjAzMDU4ZWQ1LWYxYTUtNDU4Yy05NzAwLWZkMzQzMTk4YWQxYiIsImV4cCI6MTc0OTIzNzI2Nywicm9sIjoiQWRtaW5pc3RyYWRvciIsImlkIjoiZXZpdGFAZ21haWwuY29tIiwiZW1haWwiOiJldml0YUBnbWFpbC5jb20ifQ.kxL2kqvxsQhFyNsgpVlYgEsYFKYUboQ7PKAORyz0BTI",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_usuario\": \"cliente1@gmail.com\",\n  \"nombre\": \"Lautaro\",\n  \"apellido\": \"Moreno\",\n  \"rol\": \"Cliente\",\n  \"telefono\": \"1122334455\",\n  \"email\": \"cliente1@gmail.com\",\n  \"password\": \"lautaro123\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:7000/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7000",
+							"path": [
+								"auth",
+								"register"
 							]
 						}
 					},

@@ -3,6 +3,7 @@ from flask_restful import Resource
 from main.models import Usuariomodel, Pedidomodel
 from main import db
 from sqlalchemy import desc, func
+from main.models.usuarios import Usuarios
 
 USUARIOS = {}
 
@@ -42,6 +43,10 @@ class Users(Resource):
     def post(self):
         pedidos_ids = request.get_json().get('pedidos')
         usuario = Usuariomodel.from_json(request.get_json())
+        data = request.get_json()
+        usuario = Usuarios.from_json(data)
+        usuario.plain_password = data.get("password")  # 🔐 ESTA LÍNEA ES OBLIGATORIA
+
 
         if pedidos_ids:
             pedidos = Pedidomodel.query.filter(Pedidomodel.id_pedido.in_(pedidos_ids)).all()

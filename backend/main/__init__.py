@@ -3,12 +3,16 @@ from dotenv import load_dotenv
 from flask_restful import Api
 import os
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
 
 #Inicializar restful
 api = Api()
 
 #Inicializar base de datos
 db = SQLAlchemy()
+
+#Inicializar autenticación
+jwt = JWTManager()
 
 def create_app():
     #inicializar flask
@@ -65,6 +69,18 @@ def create_app():
     api.add_resource(resources.NotificacionResource, '/notificacion/<notificacion_id>')
     api.add_resource(resources.CategoriaResource, '/categoria/<categoria_id>')
     api.add_resource(resources.ValoracionResource, '/valoracion/<string:id_usuario>/<int:id_pedido>')
-    api.init_app(app)    
+    api.init_app(app)   
+
+    #cargar clave secreta
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+
+    #cargar tiempo de expiracion de los tokens
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE'))
+    jwt.init_app(app)
+
+    from main.auth import routes
+
+    #importar bluepoint
+    app.register_blueprint(routes.auth)
 
     return app
