@@ -1,0 +1,9 @@
+Bienvenido {{usuario.nombre}} {{usuario.animal}}!
+
+Gracias por registrarte en nuestro sistema.
+
+Con nuestro servicio podras:
+
+- Ver tus pedidos
+- Ver tus facturas
+- Realizar un pedido
