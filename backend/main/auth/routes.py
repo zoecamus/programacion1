@@ -1,6 +1,7 @@
 from flask import request, jsonify, Blueprint
 from .. import db
 from main.models.usuarios import Usuarios
+from main.models.pedidos import Pedidos
 from main.models.productos import Productos
 from main.auth.decorators import role_required
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
@@ -38,8 +39,8 @@ def login():
 
 #Método de registro
 @auth.route('/register', methods=['POST'])
-@jwt_required()
-@role_required(['Administrador'])
+#@jwt_required()
+#@role_required(['Administrador'])
 def register():
     data = request.get_json()
 
@@ -61,3 +62,51 @@ def register():
         return str(error), 409
 
     return usuario.to_json(), 201
+
+@auth.route('/comprar', methods=['POST'])
+@jwt_required()
+def comprar():
+    user_id = get_jwt_identity()
+    usuario = Usuarios.query.get(user_id)
+
+    if not usuario.puede_comprar():
+        return jsonify({'msg': 'No autorizado para comprar'}), 403
+
+    data = request.get_json()
+    pedido = Pedidos.from_json({**data, "id_usuario": user_id})
+
+    try:
+        db.session.add(pedido)
+        db.session.commit()
+        return jsonify({'msg': 'Pedido realizado correctamente'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': 'Error al procesar el pedido', 'error': str(e)}), 500
+    
+@auth.route('/crear_producto', methods=['POST'])
+@jwt_required()
+def crear_producto():
+    user_id = get_jwt_identity()
+    usuario = Usuarios.query.get(user_id)
+    print("ROL DEL USUARIO:", usuario.rol)
+
+    if not usuario.puede_cargar_producto():
+        return jsonify({'msg': 'No autorizado para crear productos'}), 403
+
+    data = request.get_json()
+    producto = Productos.from_json(data)
+
+    try:
+        db.session.add(producto)
+        db.session.commit()
+        return jsonify(producto.to_json()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': 'Error al crear el producto', 'error': str(e)}), 500
+
+@auth.route('/ver_productos', methods=['GET'])
+def ver_productos():
+    productos = Productos.query.all()
+    return jsonify([p.to_json() for p in productos]), 200
+
+

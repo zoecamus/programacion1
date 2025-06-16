@@ -15,6 +15,18 @@ class Usuarios(db.Model):
     usuario_valoracion = db.relationship('Valoraciones', back_populates = 'valoracion_usuario', cascade = "all, delete-orphan")#1 a N relacion
     usuario_notificacion = db.relationship('Notificaciones',back_populates = 'notificacion_usuario', cascade = "all, delete-orphan")#1 a N relacion
     
+    def puede_comprar(self):
+        return self.rol == 'Cliente'
+
+    def puede_cargar_producto(self):
+        return self.rol in ['Encargado', 'Administrador']
+
+    def puede_eliminar_usuario(self):
+        return self.rol == 'Administrador'
+
+    def puede_ver_panel_admin(self):
+        return self.rol == 'Administrador'
+
     #no permite leerla
     @property
     def plain_password(self):
