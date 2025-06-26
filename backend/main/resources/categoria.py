@@ -2,6 +2,8 @@ from flask import request, jsonify
 from flask_restful import Resource
 from main.models import Usuariomodel, Categoriamodel
 from main import db
+from flask_jwt_extended import jwt_required
+from main.auth.decorators import role_required
 
 CATEGORIAS = {} 
 
@@ -12,6 +14,8 @@ class Categoria(Resource):
             return {'error': 'Categoría no encontrada'}, 404
         return {'categoria': categoria.to_json()}, 200
 
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def put(self, categoria_id):
         data = request.get_json()
         user_id = (request.headers.get('user_id') or request.headers.get('User-Id') or request.headers.get('X-User-Id'))
@@ -25,6 +29,8 @@ class Categoria(Resource):
         db.session.commit()
         return {'mensaje': 'Categoría actualizada correctamente', 'categoria': categoria.to_json()}, 200
 
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def delete(self, categoria_id):
         user_id = request.headers.get('User-Id')
         if not user_id:

@@ -3,6 +3,7 @@ from flask_restful import Resource
 from main.models import Usuariomodel, Pedidomodel
 from main import db
 
+
 PEDIDO = {}
 
 class Pedido(Resource):
@@ -11,6 +12,7 @@ class Pedido(Resource):
         if not pedido:
             return {'error': 'Pedido no encontrado'}, 404
         return {'pedido': pedido.to_json()}, 200
+
 
     def put(self, pedido_id):
         data = request.get_json()

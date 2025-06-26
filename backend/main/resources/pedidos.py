@@ -3,8 +3,12 @@ from flask_restful import Resource
 from main.models import Pedidomodel  
 from main import db
 from sqlalchemy import func
+from flask_jwt_extended import jwt_required  
+from main.auth.decorators import role_required
 
 class Pedidos(Resource):
+    @jwt_required()  
+    @role_required(['Administrador', 'Encargado'])
     def get(self):
         page = 1
         per_page = 10
@@ -35,6 +39,8 @@ class Pedidos(Resource):
             'page': page
         })
 
+    @jwt_required()
+    @role_required(['Cliente'])  
     def post(self):
         data = request.get_json()
         pedido = Pedidomodel.from_json(data)

@@ -1,0 +1,2 @@
+DATABASE_PATH=DB/
+DATABASE_NAME=database.db

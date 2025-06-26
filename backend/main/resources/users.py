@@ -4,10 +4,14 @@ from main.models import Usuariomodel, Pedidomodel
 from main import db
 from sqlalchemy import desc, func
 from main.models.usuarios import Usuarios
+from flask_jwt_extended import jwt_required
+from main.auth.decorators import role_required
 
 USUARIOS = {}
 
 class Users(Resource):
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def get(self):
         page = 1
         per_page = 10
@@ -45,7 +49,7 @@ class Users(Resource):
         usuario = Usuariomodel.from_json(request.get_json())
         data = request.get_json()
         usuario = Usuarios.from_json(data)
-        usuario.plain_password = data.get("password")  # 🔐 ESTA LÍNEA ES OBLIGATORIA
+        usuario.plain_password = data.get("password")  
 
 
         if pedidos_ids:

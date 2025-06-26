@@ -3,6 +3,8 @@ from flask_restful import Resource
 from main.models import Usuariomodel, Facturamodel
 from main import db
 from datetime import datetime
+from flask_jwt_extended import jwt_required
+from main.auth.decorators import role_required
 
 FACTURAS = {}
 
@@ -13,6 +15,8 @@ class Factura(Resource):
             return {'error': 'Factura no encontrada'}, 404
         return {'factura': factura.to_json()}, 200
 
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def put(self, factura_id): 
         data = request.get_json() or {}
         user_id = (data.get('user_id') or request.headers.get('User-Id') or request.headers.get('user_id') or request.headers.get('user id'))
@@ -34,6 +38,8 @@ class Factura(Resource):
         db.session.commit()
         return {'mensaje': 'Factura actualizada correctamente', 'factura': factura.to_json()}, 200
 
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def delete(self, factura_id):
         data = request.get_json() or {}
         user_id = (data.get('user_id') or request.headers.get('User-Id') or request.headers.get('user_id') or request.headers.get('user id'))

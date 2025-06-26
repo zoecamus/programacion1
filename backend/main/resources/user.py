@@ -2,10 +2,13 @@ from flask import request, jsonify
 from flask_restful import Resource
 from main.models import Usuariomodel
 from main import db
+from flask_jwt_extended import jwt_required
+from main.auth.decorators import role_required
 
 USUARIOS = {}
 
 class User(Resource):
+
     def get(self, id_usuario):
         user_header = (
             request.headers.get('user_id') or
@@ -28,6 +31,8 @@ class User(Resource):
 
         return {'usuario': target_user.to_json()}, 200
 
+    @jwt_required()
+    @role_required(['Administrador', 'Encargado'])
     def put(self, id_usuario):
         data = request.get_json()
         user_header = (
@@ -57,6 +62,8 @@ class User(Resource):
         db.session.commit()
         return {'mensaje': 'Usuario actualizado correctamente'}, 200
 
+    @jwt_required()
+    @role_required(['Administrador'])
     def delete(self, id_usuario):
         usuario = db.session.get(Usuariomodel, id_usuario)
         if not usuario:

@@ -3,6 +3,8 @@ from flask_restful import Resource
 from main.models import Productomodel, Categoriamodel
 from main import db
 from sqlalchemy import asc, desc
+from flask_jwt_extended import jwt_required
+from main.auth.decorators import role_required
 
 class Products(Resource):
     def get(self):
@@ -47,7 +49,8 @@ class Products(Resource):
             'pages': productos.pages,
             'page': page
         })
-
+    @jwt_required()
+    @role_required(['Administrador'])
     def post(self):
         producto = Productomodel.from_json(request.get_json())
         db.session.add(producto)

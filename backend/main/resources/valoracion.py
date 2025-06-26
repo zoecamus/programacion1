@@ -4,6 +4,7 @@ from main.models import Usuariomodel, Valoracionesmodel
 from main import db
 from sqlalchemy.exc import IntegrityError
 
+
 VALORACIONES = {}
 
 class Valoracion (Resource):
@@ -13,7 +14,7 @@ class Valoracion (Resource):
             return {'error': 'Valoración no encontrada'}, 404
         return {'valoracion': valoracion.to_json()}, 200
 
-    
+
     def delete(self, id_usuario, id_pedido):
         user_header = (request.headers.get('user_id') or request.headers.get('User-Id') or request.headers.get('X-User-Id'))
         if not user_header:
