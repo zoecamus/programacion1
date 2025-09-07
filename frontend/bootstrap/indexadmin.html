@@ -1,0 +1,583 @@
+
+<<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>La Roti · Admin</title>
+
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- === TU ESTILO UNIFICADO === -->
+  <style>
+    :root{
+      --brand: #ff914d;
+      --brand-dark: #826346;
+      --brand-light:#faf4e6;
+      --ink:#182230;
+      --muted:#6b7280;
+
+      --chip:#fff4ec;
+      --radius-lg: 1rem;
+      --shadow-sm: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f8f9fa;}
+
+    .navbar-roti{ background:#fff!important; box-shadow: var(--shadow-sm);}
+    .navbar-roti .navbar-brand{font-weight:700}
+    #logoRoti{ height:46px }
+
+    .hero{ background:linear-gradient(180deg, var(--brand) 0%, #ff8533 70%, #fff 100%); color:#fff; }
+    .hero-foreground{ color:#fff; }
+
+    .btn-brand{ background:var(--brand); color:#fff; border:none }
+    .btn-brand:hover{ background:var(--brand-dark); color:#fff }
+    .btn-ink{ background:var(--brand-dark); color:#fff; border:none }
+    .btn-ink:hover{ filter:brightness(.95) }
+
+    .chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--chip);padding:.6rem 1rem;border-radius:999px;font-weight:700;border:1px solid rgba(0,0,0,.06)}
+    .chip.active{ outline:2px solid var(--brand) }
+
+    .card{ border:0; border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card .card-header{ background:#fff; border-bottom:1px solid rgba(0,0,0,.06); border-top-left-radius:var(--radius-lg); border-top-right-radius:var(--radius-lg); }
+    .table thead th{ white-space:nowrap }
+    .table> :not(caption)>*>*{ vertical-align:middle }
+
+    .rounded-lg{ border-radius:var(--radius-lg) }
+    .thumb-40{ width:40px; height:40px; object-fit:cover; border-radius:.5rem }
+    .thumb-44{ width:44px; height:44px; object-fit:cover; border-radius:.5rem }
+
+    .item-thumb{border-radius:1rem;object-fit:cover;height:140px;width:100%}
+
+    .step{display:flex;align-items:flex-start;gap:.75rem}
+    .step .dot{flex:0 0 12px;height:12px;border-radius:999px;background:#e5e7eb;margin-top:.35rem}
+    .step.active .dot{background:var(--brand)}
+    .step .label{font-weight:700}
+    .step .sub{color:var(--muted);font-size:.9rem}
+
+    .input-icon { position: relative; }
+    .input-icon span { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); opacity:.7; }
+    .input-icon input { padding-left:2.2rem; }
+  </style>
+</head>
+
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-light navbar-roti sticky-top">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="navbar-brand" href="#"><i class="bi bi-egg-fried me-2"></i>La Roti · Admin</a>
+      <div class="d-flex align-items-center gap-3">
+        <!-- Si querés reponer Ayuda, agregá un botón acá -->
+        <button class="btn btn-ink btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero py-4">
+    <div class="container d-flex flex-wrap gap-3 align-items-center justify-content-between hero-foreground">
+      <div>
+        <h1 class="h3 fw-bold mb-1">Panel de administración</h1>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO -->
+  <section class="container my-4">
+    <ul class="nav nav-pills mb-3" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-stock" type="button">Stock & Menú</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-orders" type="button">Pedidos</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-users" type="button">Usuarios</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-promos" type="button">Promociones</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- ===== STOCK & MENÚ ===== -->
+      <div class="tab-pane fade show active" id="pane-stock">
+        <div class="card mb-4">
+          <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <div class="d-flex gap-2 align-items-center">
+              <span class="fw-semibold"><i class="bi bi-clipboard2-data me-1"></i>Stock</span>
+            </div>
+            <div class="d-flex gap-2">
+              <div class="input-group input-group-sm" style="width:260px">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="stockSearch" class="form-control" placeholder="Buscar producto o categoría…">
+              </div>
+              <button class="btn btn-sm btn-brand" id="btnNewProduct" data-bs-toggle="modal" data-bs-target="#productModal">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo producto
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th class="text-end">Precio</th>
+                    <th class="text-center">Stock</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="stockTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PEDIDOS ===== -->
+      <div class="tab-pane fade" id="pane-orders">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-truck me-1"></i>Gestión de pedidos</span>
+            <div class="input-group input-group-sm" style="width:260px">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input id="orderSearch" class="form-control" placeholder="Buscar # o cliente…">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light"><tr>
+                <th>#</th><th>Cliente</th><th>Items</th><th>Estado</th><th>Pago</th><th class="text-end">Acciones</th>
+              </tr></thead>
+              <tbody id="ordersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== USUARIOS ===== -->
+      <div class="tab-pane fade" id="pane-users">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-people me-1"></i>Gestión de usuarios</span>
+            <div class="input-group input-group-sm" style="width:260px">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input id="userSearch" class="form-control" placeholder="Buscar nombre o email…">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light"><tr>
+                <th>Usuario</th><th>Email</th><th>Estado</th><th class="text-end">Acciones</th>
+              </tr></thead>
+              <tbody id="usersBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PROMOS ===== -->
+      <div class="tab-pane fade" id="pane-promos">
+        <div class="card">
+          <div class="card-header"><span class="fw-semibold"><i class="bi bi-megaphone me-1"></i>Envío de promociones</span></div>
+          <div class="card-body">
+            <div class="vstack gap-3" id="promoList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-top py-4 bg-white mt-4">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div class="text-body-secondary">© <span id="year"></span> La Roti</div>
+      <div class="d-flex gap-3">
+        <a class="link-body-emphasis" href="#">Términos</a>
+        <a class="link-body-emphasis" href="#">Privacidad</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========= MODALES ========= -->
+  <!-- Producto (crear/editar) -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="productForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalTitle">Nuevo producto</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="prodId">
+          <div class="mb-2">
+            <label class="form-label">Nombre</label>
+            <input class="form-control" id="prodName" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" id="prodCat" required>
+              <option>Entradas</option><option>Principales</option>
+              <option>Ensaladas</option><option>Postres</option>
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Precio</label>
+              <input type="number" min="0" class="form-control" id="prodPrice" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Stock</label>
+              <input type="number" min="0" class="form-control" id="prodStock" required>
+            </div>
+          </div>
+          <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" id="prodActive" checked>
+            <label class="form-check-label" for="prodActive">Activo</label>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">URL de imagen</label>
+            <input class="form-control" id="prodImg" placeholder="img/RotiBurger.png">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn btn-brand" type="submit">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Pedido (editar) -->
+  <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="orderForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar pedido <span id="omId"></span></h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ordId">
+          <div class="mb-2">
+            <label class="form-label">Cliente</label>
+            <input class="form-control" id="ordClient">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Estado</label>
+            <select class="form-select" id="ordStatus">
+              <option>Recibido</option>
+              <option>En preparación</option>
+              <option>Listo para retirar</option>
+              <option>Entregado</option>
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Pagado</label>
+              <select class="form-select" id="ordPaid">
+                <option value="false">No pago</option>
+                <option value="true">Pagado</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Método</label>
+              <select class="form-select" id="ordMethod">
+                <option value="">—</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="mp">Mercado Pago</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-text mt-2">Los items se editan en la vista de empleado (para no mezclar operaciones).</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-danger" id="ordDelete" type="button"><i class="bi bi-trash me-1"></i>Eliminar</button>
+          <button class="btn btn-brand" type="submit">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMsg">Listo</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= JS ========= -->
+  <script>
+    /* ===== Datos de ejemplo ===== */
+    const PRODUCTS = [
+      {id:1,name:'Patitas de pollo x12',cat:'RotiPrincipal',price:8500,stock:50,active:true,img:'logo/RotiPatitas.png'},
+      {id:2,name:'Hamburguesa',cat:'RotiPrincipal',price:10000,stock:25,active:true,img:'logo/rotiBurger.png'},
+      {id:3,name:'Papas Fritas',cat:'RotiGuarnicion',price:5000,stock:5,active:true,img:'logo/RotiPapitasFritas.png'},
+      {id:4,name:'Ensalada',cat:'RotiGuarnicion',price:2200,stock:0,active:false,img:'logo/RotiEnsalada.png'},
+      {id:5,name:'Chocotorta',cat:'RotiPostre',price:2700,stock:0,active:false,img:'logo/Rotichoco.png'},
+      {id:6,name:'Cheesecake',cat:'RotiPostre',price:2800,stock:0,active:true,img:'logo/Roticheese.png'},
+      
+    ];
+
+    const ORDERS = [
+      { id:901, client:'María Eva Modarelli', items:[{pid:2,q:1},{pid:3,q:1}], status:'Recibido',           date:'04/09 15:35', paid:false, method:null },
+      { id:902, client:'Guadalupe Yañez', items:[{pid:1,q:1},{pid:4,q:1}], status:'En preparación',     date:'04/09 15:20', paid:true,  method:'efectivo' },
+      { id:903, client:'Eugenia Morales', items:[{pid:2,q:2}],             status:'Listo para retirar', date:'04/09 15:05', paid:false, method:null }
+    ];
+
+    const USERS = [
+      { id:101, name:'María Eva Modarelli', email:'m.modarelli@gmail.com',   status:'Activo' },
+      { id:102, name:'Guadalupe Yañez', email:'guaday@gmail.com',   status:'Pendiente' },
+      { id:103, name:'Eugenia Morales', email:'eugeniamorales@gmail.com', status:'Bloqueado' },
+      { id:104, name:'Alberto Borges',  email:'albertobb@gmail.com', status:'Activo' }
+    ];
+
+    const PROMOS = [
+      { id:1, title:'Almuerzo Lunes',   desc:'Postre de regalo con tu compra' },
+      { id:2, title:'Todos los días',   desc:'15% con transferencia' },
+      { id:3, title:'Martes a Jueves',  desc:'10% todos los métodos de pago' },
+      { id:4, title:'29 de cada mes',   desc:'10% llevando 2 platos o más de ñoquis' },
+    ];
+
+    /* ===== Helpers ===== */
+    const $ = s => document.querySelector(s);
+    const money = n => n.toLocaleString('es-AR');
+    const showToast = (msg)=>{ $('#toastMsg').textContent = msg; bootstrap.Toast.getOrCreateInstance($('#appToast')).show(); };
+    const flowBadge = s => ({'Recibido':'secondary','En preparación':'warning','Listo para retirar':'info','Entregado':'success'}[s]||'light');
+    const userBadge = s => ({'Activo':'success','Pendiente':'warning','Bloqueado':'secondary'}[s]||'light');
+
+    /* ===== STOCK ===== */
+    function rowProduct(p){
+      const alert = p.stock>20? 'success' : p.stock>5? 'warning':'danger';
+      const badge = p.active ? '<span class="badge text-bg-success">Activo</span>' : '<span class="badge text-bg-secondary">Inactivo</span>';
+      return `<tr data-pid="${p.id}">
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <img src="${p.img}" class="thumb-44" alt="${p.name}">
+            <div><div class="fw-semibold">${p.name}</div><div class="small text-body-secondary">ID #${p.id}</div></div>
+          </div>
+        </td>
+        <td>${p.cat}</td>
+        <td class="text-end">$${money(p.price)}</td>
+        <td class="text-center"><span class="badge text-bg-${alert}">x${p.stock}</span></td>
+        <td>${badge}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-secondary" data-edit-product="${p.id}">Editar</button>
+          <button class="btn btn-sm btn-outline-danger" data-del-product="${p.id}"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>`;
+    }
+    function renderStock(){
+      const q = ($('#stockSearch')?.value||'').toLowerCase();
+      $('#stockTbody').innerHTML = PRODUCTS
+        .filter(p => (`${p.name} ${p.cat}`).toLowerCase().includes(q))
+        .map(rowProduct).join('') || `<tr><td colspan="6" class="text-center text-body-secondary py-4">Sin resultados</td></tr>`;
+    }
+
+    // “Nuevo”
+    document.getElementById('btnNewProduct').addEventListener('click', ()=>{
+      $('#productModalTitle').textContent = 'Nuevo producto';
+      $('#prodId').value = '';
+      $('#prodName').value = '';
+      $('#prodCat').value = 'Entradas';
+      $('#prodPrice').value = 0;
+      $('#prodStock').value = 0;
+      $('#prodActive').checked = true;
+      $('#prodImg').value = '';
+    });
+
+    // Editar / Eliminar producto
+    document.addEventListener('click',(ev)=>{
+      const edit = ev.target.closest('[data-edit-product]');
+      const del  = ev.target.closest('[data-del-product]');
+      if (edit){
+        const p  = PRODUCTS.find(x=>x.id==edit.dataset.editProduct); if(!p) return;
+        $('#productModalTitle').textContent = 'Editar producto';
+        $('#prodId').value = p.id;
+        $('#prodName').value = p.name;
+        $('#prodCat').value = p.cat;
+        $('#prodPrice').value = p.price;
+        $('#prodStock').value = p.stock;
+        $('#prodActive').checked = !!p.active;
+        $('#prodImg').value = p.img || '';
+        bootstrap.Modal.getOrCreateInstance('#productModal').show();
+      }
+      if (del){
+        const id = +del.dataset.delProduct;
+        if (confirm('¿Eliminar producto?')){
+          const i = PRODUCTS.findIndex(x=>x.id===id);
+          if (i>=0) PRODUCTS.splice(i,1);
+          renderStock(); showToast('Producto eliminado');
+        }
+      }
+    });
+
+    // Guardar (crear/editar)
+    document.getElementById('productForm').addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const id = +($('#prodId').value || 0);
+      const data = {
+        id: id || (Math.max(0, ...PRODUCTS.map(p=>p.id))+1),
+        name: $('#prodName').value.trim(),
+        cat:  $('#prodCat').value,
+        price: Math.max(0, +$('#prodPrice').value),
+        stock: Math.max(0, +$('#prodStock').value),
+        active: $('#prodActive').checked,
+        img:  $('#prodImg').value.trim() || 'img/RotiBurger.png'
+      };
+      if (id){
+        const i = PRODUCTS.findIndex(p=>p.id===id);
+        if (i>=0) PRODUCTS[i]=data;
+        showToast('Producto actualizado');
+      }else{
+        PRODUCTS.push(data);
+        showToast('Producto creado');
+      }
+      bootstrap.Modal.getOrCreateInstance('#productModal').hide();
+      renderStock();
+    });
+
+    document.getElementById('stockSearch').addEventListener('input', renderStock);
+
+    /* ===== PEDIDOS ===== */
+    function orderRow(o){
+      const itemsCount = o.items.reduce((a,b)=>a+b.q,0);
+      const paid = o.paid ? '<span class="badge text-bg-success">Pagado</span>' : '<span class="badge text-bg-secondary">Impago</span>';
+      return `<tr data-oid="${o.id}">
+        <td>#${o.id}</td>
+        <td>${o.client || '—'}</td>
+        <td>${itemsCount}</td>
+        <td><span class="badge text-bg-${flowBadge(o.status)}">${o.status}</span></td>
+        <td>${paid}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-secondary" data-edit-order="${o.id}">Editar</button>
+          <button class="btn btn-sm btn-outline-danger" data-del-order="${o.id}"><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>`;
+    }
+    function renderOrders(){
+      const q = ($('#orderSearch')?.value||'').toLowerCase();
+      $('#ordersBody').innerHTML = ORDERS
+        .filter(o => (`${o.id} ${o.client}`).toLowerCase().includes(q))
+        .map(orderRow).join('') || `<tr><td colspan="6" class="text-center text-body-secondary py-4">Sin pedidos</td></tr>`;
+    }
+
+    // Editar pedido
+    document.addEventListener('click', (ev)=>{
+      const edit = ev.target.closest('[data-edit-order]');
+      const del  = ev.target.closest('[data-del-order]');
+      if (edit){
+        const id  = +edit.dataset.editOrder;
+        const o   = ORDERS.find(x=>x.id===id); if(!o) return;
+        $('#ordId').value = o.id; $('#omId').textContent = '#'+o.id;
+        $('#ordClient').value = o.client || '';
+        $('#ordStatus').value = o.status;
+        $('#ordPaid').value   = String(!!o.paid);
+        $('#ordMethod').value = o.method || '';
+        bootstrap.Modal.getOrCreateInstance('#orderModal').show();
+      }
+      if (del){
+        const id  = +del.dataset.delOrder;
+        if (confirm('¿Eliminar pedido?')){
+          const i = ORDERS.findIndex(x=>x.id===id);
+          if (i>=0) ORDERS.splice(i,1);
+          renderOrders(); showToast('Pedido eliminado');
+        }
+      }
+    });
+
+    document.getElementById('orderForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const id = +$('#ordId').value;
+      const i  = ORDERS.findIndex(x=>x.id===id);
+      if (i<0) return;
+      ORDERS[i].client = $('#ordClient').value.trim();
+      ORDERS[i].status = $('#ordStatus').value;
+      ORDERS[i].paid   = $('#ordPaid').value === 'true';
+      ORDERS[i].method = $('#ordMethod').value || null;
+      bootstrap.Modal.getOrCreateInstance('#orderModal').hide();
+      renderOrders(); showToast('Pedido actualizado');
+    });
+
+    document.getElementById('ordDelete').addEventListener('click', ()=>{
+      const id = +$('#ordId').value;
+      if (confirm('¿Eliminar pedido?')){
+        const i = ORDERS.findIndex(x=>x.id===id);
+        if (i>=0) ORDERS.splice(i,1);
+        bootstrap.Modal.getOrCreateInstance('#orderModal').hide();
+        renderOrders(); showToast('Pedido eliminado');
+      }
+    });
+
+    document.getElementById('orderSearch').addEventListener('input', renderOrders);
+
+    /* ===== USUARIOS ===== */
+    function userRow(u){
+      return `<tr data-uid="${u.id}">
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td><span class="badge text-bg-${userBadge(u.status)}">${u.status}</span></td>
+        <td class="text-end">
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Cambiar estado</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#" data-set-status="Activo">Activo</a></li>
+              <li><a class="dropdown-item" href="#" data-set-status="Pendiente">Pendiente</a></li>
+              <li><a class="dropdown-item" href="#" data-set-status="Bloqueado">Bloqueado</a></li>
+            </ul>
+          </div>
+        </td>
+      </tr>`;
+    }
+    function renderUsers(){
+      const q = ($('#userSearch')?.value||'').toLowerCase();
+      $('#usersBody').innerHTML = USERS
+        .filter(u => (`${u.name} ${u.email} ${u.status}`).toLowerCase().includes(q))
+        .map(userRow).join('') || `<tr><td colspan="4" class="text-center text-body-secondary py-4">Sin usuarios</td></tr>`;
+    }
+    document.addEventListener('click', (ev)=>{
+      const a = ev.target.closest('[data-set-status]');
+      if (a){
+        ev.preventDefault();
+        const row = ev.target.closest('tr[data-uid]');
+        const id  = +row.dataset.uid;
+        const i   = USERS.findIndex(x=>x.id===id);
+        if (i>=0){
+          USERS[i].status = a.dataset.setStatus;
+          renderUsers(); showToast(`Estado cambiado a ${USERS[i].status}`);
+        }
+      }
+    });
+    document.getElementById('userSearch').addEventListener('input', renderUsers);
+
+    /* ===== PROMOS ===== */
+    function renderPromos(){
+      const c = document.getElementById('promoList');
+      c.innerHTML = PROMOS.map(p => `
+        <div class="d-flex align-items-center justify-content-between p-3 rounded-4 border bg-white">
+          <div>
+            <div class="fw-semibold">${p.title}</div>
+            <div class="text-body-secondary small">${p.desc}</div>
+          </div>
+          <button class="btn btn-ink" data-send-promo="${p.id}">
+            Enviar <i class="bi bi-send ms-1"></i>
+          </button>
+        </div>
+      `).join('<hr class="my-1">');
+    }
+    document.addEventListener('click',(ev)=>{
+      const b = ev.target.closest('[data-send-promo]');
+      if (b){
+        const p = PROMOS.find(x=>x.id==b.dataset.sendPromo);
+        showToast('Promo enviada: ' + p.title);
+      }
+    });
+
+    /* ===== INIT ===== */
+    document.getElementById('year').textContent = new Date().getFullYear();
+    renderStock(); renderOrders(); renderUsers(); renderPromos();
+  </script>
+</body>
+</html>

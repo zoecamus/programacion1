@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>La Roti · Usuario (Retiro)</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    :root{
+      --brand: #ff914d;
+      --brand-dark: #826346;
+      --brand-light:#faf4e6;
+      --ink:#182230;
+      --muted:#6b7280;
+
+      --chip:#fff4ec;
+      --radius-lg: 1rem;
+      --shadow-sm: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f8f9fa;}
+
+    .navbar-roti{ background:#fff!important; box-shadow: var(--shadow-sm);}
+    .navbar-roti .navbar-brand{font-weight:700}
+    #logoRoti{ height:46px }
+
+    .hero{ background:linear-gradient(180deg, var(--brand) 0%, #ff8533 70%, #fff 100%); color:#fff; }
+    .hero-foreground{ color:#fff; }
+
+    .btn-brand{ background:var(--brand); color:#fff; border:none }
+    .btn-brand:hover{ background:var(--brand-dark); color:#fff }
+    .btn-ink{ background:var(--brand-dark); color:#fff; border:none }
+    .btn-ink:hover{ filter:brightness(.95) }
+
+    .chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--chip);padding:.6rem 1rem;border-radius:999px;font-weight:700;border:1px solid rgba(0,0,0,.06)}
+    .chip.active{ outline:2px solid var(--brand) }
+
+    .card{ border:0; border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+    .card .card-header{ background:#fff; border-bottom:1px solid rgba(0,0,0,.06); border-top-left-radius:var(--radius-lg); border-top-right-radius:var(--radius-lg); }
+    .table thead th{ white-space:nowrap }
+    .table> :not(caption)>*>*{ vertical-align:middle }
+
+    .rounded-lg{ border-radius:var(--radius-lg) }
+    .thumb-40{ width:40px; height:40px; object-fit:cover; border-radius:.5rem }
+    .thumb-44{ width:44px; height:44px; object-fit:cover; border-radius:.5rem }
+
+    .item-thumb{border-radius:1rem;object-fit:cover;height:140px;width:100%}
+
+    .step{display:flex;align-items:flex-start;gap:.75rem}
+    .step .dot{flex:0 0 12px;height:12px;border-radius:999px;background:#e5e7eb;margin-top:.35rem}
+    .step.active .dot{background:var(--brand)}
+    .step .label{font-weight:700}
+    .step .sub{color:var(--muted);font-size:.9rem}
+
+    .input-icon { position: relative; }
+    .input-icon span { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); opacity:.7; }
+    .input-icon input { padding-left:2.2rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg fixed-top navbar-light navbar-roti">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">La <span class="text-warning">Roti</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto align-items-lg-center" id="navRight">
+          <li class="nav-item me-2" id="navAuth">
+            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar sesión</button>
+          </li>
+          <li class="nav-item">
+            <button class="btn btn-brand" type="button" data-bs-toggle="offcanvas" data-bs-target="#carrito">
+              Pedido <span class="badge text-bg-light ms-1" id="cartCount">0</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero pt-5">
+    <div class="container py-5 hero-foreground">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <h1 class="display-5 fw-bold mb-3">Comida casera lista para <u>retirar</u></h1>
+          <p class="lead mb-4">Elegí tus platos, confirmá el pedido y te avisamos cuando esté Listo para retirar.</p>
+        </div>
+        <div class="col-lg-5 text-center">
+          <img id="heroLogo" src="logo/roti.png" class="img-fluid rounded-4 shadow" alt="Logo La Roti" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="menu" class="py-4">
+    <div class="container">
+      <h2 class="h4 mb-3">Menú</h2>
+      <div class="d-flex cat-scroll mb-3">
+        <button class="chip active" data-cat="todas">Todos</button>
+        <button class="chip" data-cat="guarniciones">RotiGuarniciones</button>
+        <button class="chip" data-cat="principales">RotiPrincipales</button>
+        <button class="chip" data-cat="postres">RotiPostres</button>
+        <button class="chip" data-cat="entradas">RotiEntradas</button>
+      </div>
+      <div class="row g-4" id="menuGrid"></div>
+    </div>
+  </section>
+
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="pmName">Producto</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-4">
+            <div class="col-md-6"><img id="pmImg" class="img-fluid rounded-4 shadow" alt=""/></div>
+            <div class="col-md-6">
+              <p id="pmDesc" class="text-secondary"></p>
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <button class="btn btn-outline-secondary" id="pmDec">–</button>
+                <span id="pmQty" class="fw-bold">1</span>
+                <button class="btn btn-outline-secondary" id="pmInc">+</button>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <strong id="pmPrice"></strong>
+                <button class="btn btn-brand" id="pmAdd">Agregar al carrito</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="carrito">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Tu pedido</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+      <div id="cartItems" class="vstack gap-3 mb-3"></div>
+      <div class="mt-auto">
+        <div class="d-flex justify-content-between"><span>Subtotal</span><strong id="cartSubtotal">$0</strong></div>
+        <hr>
+        <div class="d-flex justify-content-between fs-5"><span>Total</span><strong id="cartTotal">$0</strong></div>
+        <button class="btn btn-brand w-100 mt-3" id="checkoutBtn" data-bs-toggle="modal" data-bs-target="#estadoModal">Confirmar pedido</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="estadoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Estado de tu pedido</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="vstack gap-3" id="steps">
+            <div class="step"><span class="dot"></span><div><div class="label">Confirmado</div><div class="sub">Recibimos tu pedido</div></div></div>
+            <div class="step"><span class="dot"></span><div><div class="label">Preparando</div><div class="sub">Estamos cocinando</div></div></div>
+            <div class="step"><span class="dot"></span><div><div class="label">Listo para retirar</div><div class="sub">Acercate al mostrador</div></div></div>
+            <div class="step"><span class="dot"></span><div><div class="label">Retirado</div><div class="sub">¡Gracias!</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Iniciar sesión</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3 input-icon">
+            <span>📧</span>
+            <input id="loginEmail" class="form-control" type="email" placeholder="tu@email.com"/>
+          </div>
+          <div class="mb-2 input-icon">
+            <span>🔒</span>
+            <input id="loginPass" class="form-control" type="password" placeholder="Contraseña"/>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="loginRemember">
+              <label class="form-check-label" for="loginRemember">Recordarme</label>
+            </div>
+            <a href="#" id="openForgot" class="link-secondary">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div class="form-text">¿No tenés cuenta? <a href="#" id="openRegister" class="link-brand">Registrate</a></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-brand" id="doLogin">Entrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Crear cuenta</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3 input-icon"><span>🙍</span><input id="regName" class="form-control" placeholder="Tu nombre"/></div>
+          <div class="mb-3 input-icon"><span>📧</span><input id="regEmail" class="form-control" type="email" placeholder="tu@email.com"/></div>
+          <div class="mb-3 input-icon"><span>🔒</span><input id="regPass" class="form-control" type="password" placeholder="Contraseña (mín. 6)"/></div>
+          <div class="mb-2 input-icon"><span>🔒</span><input id="regPass2" class="form-control" type="password" placeholder="Repetir contraseña"/></div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="regTerms">
+            <label class="form-check-label" for="regTerms">Acepto términos y condiciones</label>
+          </div>
+          <div class="form-text">¿Ya tenés cuenta? <a href="#" class="link-brand" data-bs-target="#loginModal" data-bs-toggle="modal">Iniciá sesión</a></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-brand" id="doRegister">Registrarme</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="forgotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Recuperar contraseña</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="mb-3 input-icon"><span>📧</span><input id="forgotEmail" class="form-control" type="email" placeholder="tu@email.com"/></div>
+          <div class="form-text">Te enviaremos un correo con instrucciones para restablecerla.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-brand" id="doForgot">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="appToast" class="toast align-items-center text-bg-dark border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMsg">Mensaje</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const state = {
+      user: null,
+      users: [],
+      cart: [],
+      filtro: 'todas',
+      menu: [
+        {id: 101, nombre:'Ensalada',          cat:'guarniciones', precio:2200, desc:'Lechuga, tomate y cebolla con aderezo suave.', img:'logo/RotiEnsalada.png'},
+        {id: 102, nombre:'Papas fritas',      cat:'guarniciones', precio:5000, desc:'Crocantes, cortadas finas.',                   img:'logo/RotiPapitasFritas.png'},
+        {id: 201, nombre:'Patitas de pollo',  cat:'principales',  precio:8500, desc:'Rebozadas, doradas y tiernas.',                img:'logo/RotiPatitas.png'},
+        {id: 202, nombre:'Hamburguesa',       cat:'principales',  precio:10000, desc:'Medallón, queso y lechuga en pan clásico.',    img:'logo/rotiBurger.png'},
+        {id: 301, nombre:'Cheesecake',        cat:'postres',      precio:2800, desc:'Clásico con base de galletitas.',              img:'logo/Roticheese.png'},
+        {id: 302, nombre:'Chocotorta',        cat:'postres',      precio:2700, desc:'Favorita de la casa.',                         img:'logo/Rotichoco.png'},
+      ]
+    };
+
+    const toastEl = document.getElementById('appToast');
+    const toastMsg = document.getElementById('toastMsg');
+    const showToast = (msg)=>{ toastMsg.textContent = msg; bootstrap.Toast.getOrCreateInstance(toastEl).show(); };
+
+    const grid = document.getElementById('menuGrid');
+    function productCard(p){
+      return `<div class="col-12 col-sm-6 col-lg-4">
+        <div class="card h-100 product" data-view="${p.id}">
+          <img src="${p.img}" class="item-thumb" alt="${p.nombre}">
+          <div class="card-body">
+            <h5 class="card-title mb-1">${p.nombre}</h5>
+            <p class="text-secondary small mb-2">${p.desc}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>$${p.precio.toLocaleString('es-AR')}</strong>
+              <span class="text-secondary small">Ver detalle</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+    function renderMenu(){
+      const items = state.menu.filter(p => state.filtro === 'todas' ? true : p.cat === state.filtro );
+      grid.innerHTML = items.map(productCard).join('');
+    }
+    document.querySelectorAll('.chip').forEach(ch=>{
+      ch.addEventListener('click',()=>{
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+        state.filtro = ch.dataset.cat;
+        renderMenu();
+      });
+    });
+
+    const pmEl   = document.getElementById('productModal');
+    const pmName = document.getElementById('pmName');
+    const pmImg  = document.getElementById('pmImg');
+    const pmDesc = document.getElementById('pmDesc');
+    const pmPrice= document.getElementById('pmPrice');
+    const pmQtyEl= document.getElementById('pmQty');
+    let pmQty = 1;
+    let pmProd = null;
+
+    function openProductModal(id){
+      pmProd = state.menu.find(p=>p.id===id); if(!pmProd) return;
+      pmName.textContent = pmProd.nombre;
+      pmImg.src = pmProd.img; pmImg.alt = pmProd.nombre;
+      pmDesc.textContent = pmProd.desc || '';
+      pmQty = 1; pmQtyEl.textContent = pmQty;
+      pmPrice.textContent = '$' + pmProd.precio.toLocaleString('es-AR');
+      bootstrap.Modal.getOrCreateInstance(pmEl).show();
+    }
+    document.getElementById('pmInc').addEventListener('click', ()=>{ pmQty++; pmQtyEl.textContent=pmQty; });
+    document.getElementById('pmDec').addEventListener('click', ()=>{ if(pmQty>1){ pmQty--; pmQtyEl.textContent=pmQty; } });
+
+    document.getElementById('pmAdd').addEventListener('click', ()=>{
+      if(!pmProd) return;
+      addToCart(pmProd.id, pmQty);
+      bootstrap.Modal.getOrCreateInstance(pmEl).hide();
+      const ocEl=document.getElementById('carrito');
+      bootstrap.Offcanvas.getOrCreateInstance(ocEl).show();
+    });
+
+    grid.addEventListener('click', e=>{
+      const card=e.target.closest('.product');
+      if(card){ openProductModal(+card.dataset.view); }
+    });
+
+    const cartItems   = document.getElementById('cartItems');
+    const cartSubtotal= document.getElementById('cartSubtotal');
+    const cartTotal   = document.getElementById('cartTotal');
+    const cartCount   = document.getElementById('cartCount');
+
+    function addToCart(id, qty=1){
+      const p = state.menu.find(x=>x.id===+id); if(!p) return;
+      const line = state.cart.find(i=>i.id===+id);
+      if(line) line.qty += qty;
+      else state.cart.push({id:p.id, name:p.nombre, price:p.precio, qty:qty, img:p.img});
+      renderCart();
+    }
+    function removeFromCart(id){
+      state.cart = state.cart.filter(i=>i.id!==+id);
+      renderCart();
+    }
+    function renderCart() {
+      cartItems.innerHTML = state.cart.map(i => `
+        <div class="cart-item d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <img src="${i.img}" alt="${i.name}" class="thumb-48" style="width:48px;height:48px;border-radius:.5rem;object-fit:cover">
+            <div>
+              <div class="fw-semibold">${i.name}</div>
+              <div class="text-secondary small">$${i.price.toLocaleString('es-AR')}</div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" data-dec="${i.id}">–</button>
+            <span class="fw-bold">${i.qty}</span>
+            <button class="btn btn-sm btn-outline-secondary" data-inc="${i.id}">+</button>
+            <button class="btn btn-sm btn-outline-danger" data-del="${i.id}">×</button>
+          </div>
+        </div>
+      `).join('');
+
+      cartItems.querySelectorAll('[data-inc]').forEach(b =>
+        b.addEventListener('click', () => {
+          const it = state.cart.find(i => i.id == b.dataset.inc);
+          it.qty++; renderCart();
+        })
+      );
+      cartItems.querySelectorAll('[data-dec]').forEach(b =>
+        b.addEventListener('click', () => {
+          const it = state.cart.find(i => i.id == b.dataset.dec);
+          if (it.qty > 1) it.qty--; renderCart();
+        })
+      );
+      cartItems.querySelectorAll('[data-del]').forEach(b =>
+        b.addEventListener('click', () => { removeFromCart(+b.dataset.del); })
+      );
+
+      const subtotal = state.cart.reduce((s,i)=>s+i.qty*i.price,0);
+      cartSubtotal.textContent = '$' + subtotal.toLocaleString('es-AR');
+      cartTotal.textContent    = '$' + subtotal.toLocaleString('es-AR');
+      const count = state.cart.reduce((s,i)=>s+i.qty,0);
+      cartCount.textContent = count;
+    }
+
+    const estadoModal=document.getElementById('estadoModal');
+    let timer=null,step=0; 
+    const steps=document.querySelectorAll('#steps .step');
+    document.getElementById('checkoutBtn').addEventListener('click',()=>{ /* sin total ni envío extra aquí */ });
+    estadoModal.addEventListener('shown.bs.modal',()=>{
+      step=0; steps.forEach(s=>s.classList.remove('active'));
+      timer=setInterval(()=>{ if(step<steps.length){ steps[step].classList.add('active'); } step++; if(step>=steps.length){ clearInterval(timer); } },1300);
+    });
+    estadoModal.addEventListener('hide.bs.modal',()=>{ if(timer) clearInterval(timer); });
+
+    const loginModal   = document.getElementById('loginModal');
+    const registerModal= document.getElementById('registerModal');
+    const forgotModal  = document.getElementById('forgotModal');
+    const navAuth      = document.getElementById('navAuth');
+
+    document.getElementById('openForgot').addEventListener('click', (e)=>{
+      e.preventDefault();
+      bootstrap.Modal.getOrCreateInstance(loginModal).hide();
+      bootstrap.Modal.getOrCreateInstance(forgotModal).show();
+    });
+    document.getElementById('openRegister').addEventListener('click', (e)=>{
+      e.preventDefault();
+      bootstrap.Modal.getOrCreateInstance(loginModal).hide();
+      bootstrap.Modal.getOrCreateInstance(registerModal).show();
+    });
+
+    document.getElementById('doLogin').addEventListener('click', ()=>{
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const pass  = document.getElementById('loginPass').value;
+      if(!email || !pass) return showToast('Completá email y contraseña');
+      const user = state.users.find(u=>u.email===email && u.pass===pass);
+      if(!user) return showToast('Usuario o contraseña incorrectos');
+      state.user = {name:user.name, email:user.email};
+      bootstrap.Modal.getOrCreateInstance(loginModal).hide();
+      renderUserNav();
+      showToast('¡Bienvenido/a, ' + user.name + '!');
+    });
+
+    document.getElementById('doRegister').addEventListener('click', ()=>{
+      const name = document.getElementById('regName').value.trim();
+      const email= document.getElementById('regEmail').value.trim().toLowerCase();
+      const pass = document.getElementById('regPass').value;
+      const pass2= document.getElementById('regPass2').value;
+      const terms= document.getElementById('regTerms').checked;
+
+      if(!name || !email || !pass || !pass2) return showToast('Completá todos los campos');
+      if(pass.length < 6) return showToast('La contraseña debe tener al menos 6 caracteres');
+      if(pass !== pass2) return showToast('Las contraseñas no coinciden');
+      if(!terms) return showToast('Debés aceptar los términos');
+
+      if(state.users.some(u=>u.email===email)) return showToast('Ese email ya está registrado');
+
+      state.users.push({name,email,pass});
+      state.user = {name,email}; 
+      bootstrap.Modal.getOrCreateInstance(registerModal).hide();
+      renderUserNav();
+      showToast('¡Cuenta creada!');
+    });
+
+    document.getElementById('doForgot').addEventListener('click', ()=>{
+      const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+      if(!email) return showToast('Ingresá tu email');
+      bootstrap.Modal.getOrCreateInstance(forgotModal).hide();
+      showToast('Te enviamos un correo para restablecerla (simulado)');
+    });
+
+    function renderUserNav(){
+      const authEl = document.getElementById('navAuth');
+      if(state.user){
+        authEl.innerHTML = `
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+              ${state.user.name}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><span class="dropdown-item-text text-secondary small">${state.user.email}</span></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" id="logoutBtn">Cerrar sesión</a></li>
+            </ul>
+          </div>`;
+        document.getElementById('logoutBtn').addEventListener('click', (e)=>{
+          e.preventDefault();
+          state.user = null;
+          authEl.innerHTML = `<button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar sesión</button>`;
+          showToast('Sesión cerrada');
+        });
+      }else{
+        authEl.innerHTML = `<button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar sesión</button>`;
+      }
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
