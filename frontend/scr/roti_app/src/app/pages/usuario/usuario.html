@@ -1,0 +1,89 @@
+      <nav class="navbar navbar-expand-lg fixed-top navbar-light navbar-roti">
+        <div class="container">
+          <a class="navbar-brand fw-bold" routerLink="/">La <span class="text-warning">Roti</span></a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="nav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+              <li class="nav-item me-2">
+                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar sesión</button>
+              </li>
+              <li class="nav-item">
+                <button class="btn btn-brand" type="button" data-bs-toggle="offcanvas" data-bs-target="#carrito">
+                  Pedido <span class="badge text-bg-light ms-1">0</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <header class="hero pt-5">
+        <div class="container py-5 hero-foreground">
+          <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+              <h1 class="display-5 fw-bold mb-3">Comida casera lista para <u>retirar</u></h1>
+              <p class="lead mb-4">Elegí tus platos, confirmá el pedido y te avisamos cuando esté listo para retirar.</p>
+            </div>
+            <div class="col-lg-5 text-center">
+              <img id="heroLogo" src="assets/logo/roti.png" class="img-fluid rounded-4 shadow" alt="Logo La Roti" />
+            </div>
+          </div>
+        </div>
+      </header>
+      <section class="py-4">
+        <div class="container">
+          <h2 class="h4 mb-3">Menú</h2>
+          <div class="d-flex cat-scroll mb-3 gap-2">
+            <button class="chip active">Todos</button>
+            <button class="chip">RotiGuarniciones</button>
+            <button class="chip">RotiPrincipales</button>
+            <button class="chip">RotiPostres</button>
+            <button class="chip">RotiEntradas</button>
+          </div>
+          <div class="row g-4">
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card h-100 product">
+                <img src="assets/logo/RotiEnsalada.png" class="item-thumb" alt="Ensalada">
+                <div class="card-body">
+                  <h5 class="card-title mb-1">Ensalada</h5>
+                  <p class="text-secondary small mb-2">Lechuga, tomate y cebolla.</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <strong>$2.200</strong>
+                    <span class="text-secondary small">Ver detalle</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card h-100 product">
+                <img src="assets/logo/RotiPatitas.png" class="item-thumb" alt="Patitas de pollo">
+                <div class="card-body">
+                  <h5 class="card-title mb-1">Patitas de pollo</h5>
+                  <p class="text-secondary small mb-2">Rebozadas, doradas y tiernas.</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <strong>$8.500</strong>
+                    <span class="text-secondary small">Ver detalle</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card h-100 product">
+                <img src="assets/logo/rotiBurger.png" class="item-thumb" alt="Hamburguesa">
+                <div class="card-body">
+                  <h5 class="card-title mb-1">Hamburguesa</h5>
+                  <p class="text-secondary small mb-2">Medallón, queso y lechuga.</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <strong>$10.000</strong>
+                    <span class="text-secondary small">Ver detalle</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="text-center py-4">
+        <div class="text-body-secondary">© {{ currentYear }} La Roti</div>
+      </footer>
