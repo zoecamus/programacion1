@@ -7,34 +7,42 @@ from main.auth.decorators import role_required
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from main.mail.functions import sendMail
 
+
 #Blueprint para acceder a los métodos de autenticación
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
-#Método de logueo
 @auth.route('/login', methods=['POST'])
 def login():
+    print("=" * 50)
+    print("PETICIÓN DE LOGIN RECIBIDA")
     data = request.get_json()
-    print("Data recibida:", data)
-
-    usuario = db.session.query(Usuarios).filter(Usuarios.email == data.get("email")).first()
-    print("Usuario encontrado:", usuario)
-
-    if usuario:
-        print("Hash guardado:", usuario.password)
-        print("Contraseña enviada:", data.get("password"))
-        print("Validación:", usuario.validate_pass(data.get("password")))
-
-    if (usuario is None) or not (usuario.validate_pass(data.get("password"))):
-        print("Login fallido")
-        return 'Invalid user or password', 401
-
+    
+    email_enviado = data.get("email", "").strip()
+    
+    # Buscar usuario (case insensitive)
+    usuario = db.session.query(Usuarios).filter(
+        db.func.lower(Usuarios.email) == email_enviado.lower()
+    ).first()
+    
+    if not usuario:
+        print("Usuario no encontrado")
+        return jsonify({'error': 'Invalid user or password'}), 401
+    
+    # Validar contraseña
+    if not usuario.validate_pass(data.get("password")):
+        print("Contraseña incorrecta")
+        return jsonify({'error': 'Invalid user or password'}), 401
+    
+    print("✅ Login exitoso")
     access_token = create_access_token(identity=usuario)
-    data = {
+    respuesta = {
         'id': str(usuario.id_usuario),
         'email': usuario.email,
+        'nombre': usuario.nombre,
+        'rol': usuario.rol,
         'access_token': access_token
-    }    
-    return data, 200
+    }
+    return jsonify(respuesta), 200
 
 
 #Método de registro

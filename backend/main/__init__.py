@@ -6,6 +6,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
 
 api = Api()
 db = SQLAlchemy()
@@ -16,6 +20,15 @@ mailsender = Mail()
 def create_app():
     app = Flask(__name__)
     load_dotenv()
+
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:4200"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
 
     db_path = os.getenv('DATABASE_PATH')
     db_name = os.getenv('DATABASE_NAME')
@@ -68,7 +81,6 @@ def create_app():
     jwt.init_app(app)
 
     from main.auth import routes
-
     app.register_blueprint(routes.auth)
 
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')

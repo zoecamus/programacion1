@@ -9,33 +9,46 @@ import { UsuariosComponent } from './pages/usuarios/usuarios';
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path : 'productos', component: ProductosComponent },
-  { path : 'pedidos', component: PedidosComponent },
-  { path: 'usuarios', component: UsuariosComponent },
   
-  // Dashboard adaptable según rol
+  // Dashboard para Administrador
   { 
-    path: 'dashboard/:rol', 
+    path: 'dashboard/admin', 
     component: DashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['Administrador'] }
   },
   
-  // Ruta específica de admin (tu componente actual)
+  // Dashboard para Encargado
+  { 
+    path: 'dashboard/encargado', 
+    component: DashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['Encargado'] }
+  },
   
-  // Productos (accesible para admin y cliente)
-  // { 
-  //   path: 'productos', 
-  //   component: ProductosComponent,
-  //   canActivate: [AuthGuard],
-  //   data: { roles: ['admin', 'cliente'] }
-  // },
+  // Productos (para clientes)
+  { 
+    path: 'productos', 
+    component: ProductosComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['Cliente', 'Administrador'] }
+  },
   
-  // Pedidos (accesible para todos)
-  // { 
-  //   path: 'pedidos', 
-  //   component: PedidosComponent,
-  //   canActivate: [AuthGuard]
-  // },
+  // Pedidos
+  { 
+    path: 'pedidos', 
+    component: PedidosComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['Encargado', 'Administrador', 'Cliente'] }
+  },
+  
+  // Usuarios (solo admin)
+  { 
+    path: 'usuarios', 
+    component: UsuariosComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['Administrador'] }
+  },
   
   { path: '**', redirectTo: '/login' }
 ];

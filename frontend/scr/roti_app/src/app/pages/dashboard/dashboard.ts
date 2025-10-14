@@ -1,37 +1,43 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService, UserRole } from '../../services/auth.services';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css'
+  styleUrls: ['./dashboard.css']
 })
 export class DashboardComponent implements OnInit {
-  userRole: UserRole | null = null;
-  userName: string = '';
+  usuario: any;
+  rol: UserRole | null = null;
 
   constructor(
-    public authService: AuthService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
-    const user = this.authService.getCurrentUser();
-    if (user) {
-      this.userRole = user.rol;
-      this.userName = user.nombre;
-    }
-  }
-
-  navigateTo(route: string) {
-    this.router.navigate([route]);
+    this.usuario = this.authService.getCurrentUser();
+    this.rol = this.authService.getUserRole();
   }
 
   logout() {
     this.authService.logout();
+  }
+
+  // Métodos para verificar roles
+  isAdmin(): boolean {
+    return this.rol === 'Administrador';
+  }
+
+  isEncargado(): boolean {
+    return this.rol === 'Encargado';
+  }
+
+  isCliente(): boolean {
+    return this.rol === 'Cliente';
   }
 }

@@ -24,19 +24,29 @@ export class LoginComponent {
 
   iniciarSesion() {
     this.mostrarError = false;
-
+  
     if (!this.email || !this.password) {
       this.mostrarError = true;
       this.mensajeError = 'Por favor completa todos los campos';
       return;
     }
-
-    if (this.authService.login(this.email, this.password)) {
-      // Redirigir según el rol del usuario
-      this.router.navigate([this.authService.getRedirectUrl()]);
-    } else {
-      this.mostrarError = true;
-      this.mensajeError = 'Email o contraseña incorrectos';
-    }
-  }
-}
+  
+    this.authService.login(this.email, this.password).subscribe({
+      next: (success) => {
+        if (success) {
+          // Redirigir según el rol
+          const redirectUrl = this.authService.getRedirectUrl();
+          console.log('Redirigiendo a:', redirectUrl);
+          this.router.navigate([redirectUrl]);
+        } else {
+          this.mostrarError = true;
+          this.mensajeError = 'Email o contraseña incorrectos';
+        }
+      },
+      error: (error) => {
+        console.error('Error en login:', error);
+        this.mostrarError = true;
+        this.mensajeError = 'Error al conectar con el servidor';
+      }
+    });
+  }}

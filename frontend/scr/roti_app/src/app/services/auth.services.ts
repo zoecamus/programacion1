@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 
-export type UserRole = 'admin' | 'cliente' | 'empleado';
+export type UserRole = 'Administrador' | 'Encargado' | 'Cliente';
 
 export interface User {
   email: string;
@@ -17,20 +17,28 @@ export interface User {
 })
 export class AuthService {
   private readonly STORAGE_KEY = 'currentUser';
-  private readonly API_URL = 'http://localhost:7000/api'; // Cambiar 
+  private readonly API_URL = 'http://localhost:7000/auth'; // Cambiar 
 
   constructor(private http: HttpClient, private router: Router) {}
 
   login(email: string, password: string): Observable<boolean> {
+    console.log('🔵 Enviando login a:', `${this.API_URL}/login`);
+    console.log('🔵 Datos:', { email, password });
+    
     return this.http.post<User>(`${this.API_URL}/login`, { email, password }).pipe(
       tap(user => {
+        console.log('✅ Respuesta exitosa:', user);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       }),
       map(() => true),
-      catchError(() => of(false))
+      catchError((error) => {
+        console.error('❌ Error completo:', error);
+        console.error('❌ Status:', error.status);
+        console.error('❌ Error body:', error.error);
+        return of(false);
+      })
     );
   }
-
   logout() {
     localStorage.removeItem(this.STORAGE_KEY);
     this.router.navigate(['/login']);
@@ -58,20 +66,13 @@ export class AuthService {
   getRedirectUrl(): string {
     const rol = this.getUserRole();
     switch (rol) {
-      case 'admin':
+      case 'Administrador':
         return '/dashboard/admin';
-      case 'cliente':
+      case 'Encargado':
+        return '/dashboard/encargado';
+      case 'Cliente':
         return '/productos';
-      case 'empleado':
-        return '/pedidos';
       default:
         return '/login';
     }
-  }
-  private readonly USERS = [
-    { email: 'admin@laroti.com', password: 'admin123', nombre: 'Admin', rol: 'admin' as UserRole },
-    { email: 'cliente@laroti.com', password: 'cliente123', nombre: 'Juan Cliente', rol: 'cliente' as UserRole },
-    { email: 'empleado@laroti.com', password: 'empleado123', nombre: 'Pedro Empleado', rol: 'empleado' as UserRole }
-  ];
-  
-}
+  }}
