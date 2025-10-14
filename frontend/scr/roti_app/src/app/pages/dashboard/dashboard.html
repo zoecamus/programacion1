@@ -1,0 +1,174 @@
+<div class="page-container">
+    <!-- Dashboard ADMIN -->
+    <div *ngIf="userRole === 'admin'">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">¡Bienvenido, {{ userName }}! 👨‍💼</h1>
+          <p class="page-subtitle">Panel de control administrativo</p>
+        </div>
+        <button class="btn btn-outline-danger" (click)="logout()">
+          <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+        </button>
+      </div>
+  
+      <!-- Métricas -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon bg-primary">
+            <i class="bi bi-cart-check-fill"></i>
+          </div>
+          <div class="metric-content">
+            <h3>24</h3>
+            <p>Pedidos hoy</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-success">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+          <div class="metric-content">
+            <h3>$158.400</h3>
+            <p>Ventas del día</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-warning">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div class="metric-content">
+            <h3>7</h3>
+            <p>Pedidos pendientes</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-info">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <div class="metric-content">
+            <h3>142</h3>
+            <p>Clientes activos</p>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Accesos rápidos -->
+      <div class="quick-actions">
+        <h2 class="section-title">Accesos rápidos</h2>
+        <div class="actions-grid">
+          <div class="action-card" (click)="navigateTo('/admin')">
+            <i class="bi bi-clipboard2-data"></i>
+            <h3>Gestión Completa</h3>
+            <p>Stock, pedidos y usuarios</p>
+          </div>
+          <div class="action-card" (click)="navigateTo('/productos')">
+            <i class="bi bi-box-seam"></i>
+            <h3>Productos</h3>
+            <p>Ver y editar productos</p>
+          </div>
+          <div class="action-card" (click)="navigateTo('/pedidos')">
+            <i class="bi bi-receipt"></i>
+            <h3>Pedidos</h3>
+            <p>Gestionar pedidos</p>
+          </div>
+          <div class="action-card" (click)="navigateTo('/usuarios')">
+            <i class="bi bi-people"></i>
+            <h3>Usuarios</h3>
+            <p>Administrar usuarios</p>
+          </div>
+          <div class="action-card" (click)="navigateTo('/promociones')">
+            <i class="bi bi-megaphone"></i>
+            <h3>Promociones</h3>
+            <p>Crear ofertas</p>
+          </div>
+          <div class="action-card" (click)="navigateTo('/perfil')">
+            <i class="bi bi-person-circle"></i>
+            <h3>Mi Perfil</h3>
+            <p>Configuración</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Dashboard CLIENTE -->
+    <div *ngIf="userRole === 'cliente'">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">¡Hola, {{ userName }}! 🛒</h1>
+          <p class="page-subtitle">¿Qué te gustaría comer hoy?</p>
+        </div>
+        <button class="btn btn-outline-danger" (click)="logout()">
+          <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+        </button>
+      </div>
+  
+      <div class="actions-grid">
+        <div class="action-card featured" (click)="navigateTo('/productos')">
+          <i class="bi bi-basket2"></i>
+          <h3>Ver Menú</h3>
+          <p>Explora nuestros productos</p>
+        </div>
+        <div class="action-card" (click)="navigateTo('/pedidos')">
+          <i class="bi bi-clock-history"></i>
+          <h3>Mis Pedidos</h3>
+          <p>Historial de compras</p>
+        </div>
+        <div class="action-card" (click)="navigateTo('/promociones')">
+          <i class="bi bi-gift"></i>
+          <h3>Promociones</h3>
+          <p>Ofertas especiales</p>
+        </div>
+        <div class="action-card" (click)="navigateTo('/perfil')">
+          <i class="bi bi-person"></i>
+          <h3>Mi Perfil</h3>
+          <p>Datos y preferencias</p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Dashboard EMPLEADO -->
+    <div *ngIf="userRole === 'empleado'">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">¡Bienvenido, {{ userName }}! 🚴</h1>
+          <p class="page-subtitle">Tus entregas de hoy</p>
+        </div>
+        <button class="btn btn-outline-danger" (click)="logout()">
+          <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+        </button>
+      </div>
+  
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon bg-warning">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div class="metric-content">
+            <h3>5</h3>
+            <p>Pedidos pendientes</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon bg-success">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="metric-content">
+            <h3>12</h3>
+            <p>Entregas completadas</p>
+          </div>
+        </div>
+      </div>
+  
+      <div class="actions-grid">
+        <div class="action-card featured" (click)="navigateTo('/pedidos')">
+          <i class="bi bi-map"></i>
+          <h3>Mis Entregas</h3>
+          <p>Ver pedidos asignados</p>
+        </div>
+        <div class="action-card" (click)="navigateTo('/perfil')">
+          <i class="bi bi-person-circle"></i>
+          <h3>Mi Perfil</h3>
+          <p>Datos personales</p>
+        </div>
+      </div>
+    </div>
+  </div>

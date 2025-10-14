@@ -1,0 +1,167 @@
+<div class="page-container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title"><i class="bi bi-megaphone-fill me-2"></i>Promociones</h1>
+        <p class="page-subtitle">Gestiona ofertas, descuentos y códigos promocionales</p>
+      </div>
+      <button class="btn btn-brand" (click)="nuevaPromocion()" *ngIf="currentUserRole === 'admin'">
+        <i class="bi bi-plus-circle me-2"></i>Nueva promoción
+      </button>
+    </div>
+  
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center w-100">
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm" 
+                    [class.btn-brand]="filtroEstado === 'todas'"
+                    [class.btn-outline-secondary]="filtroEstado !== 'todas'"
+                    (click)="filtroEstado = 'todas'">
+              Todas
+            </button>
+            <button class="btn btn-sm"
+                    [class.btn-brand]="filtroEstado === 'activas'"
+                    [class.btn-outline-secondary]="filtroEstado !== 'activas'"
+                    (click)="filtroEstado = 'activas'">
+              Activas
+            </button>
+            <button class="btn btn-sm"
+                    [class.btn-brand]="filtroEstado === 'vencidas'"
+                    [class.btn-outline-secondary]="filtroEstado !== 'vencidas'"
+                    (click)="filtroEstado = 'vencidas'">
+              Vencidas
+            </button>
+          </div>
+          <div class="input-group input-group-sm" style="width:300px">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input class="form-control" placeholder="Buscar promoción..." [(ngModel)]="busqueda">
+          </div>
+        </div>
+      </div>
+  
+      <div class="promociones-grid">
+        <div class="promo-card" *ngFor="let promo of promociones" 
+             [class.promo-vencida]="estaVencida(promo.fechaFin) || !promo.activa">
+          <div class="promo-header">
+            <div class="promo-badges">
+              <span class="badge" [ngClass]="getTipoBadgeClass(promo.tipo)">
+                <i class="bi bi-{{ getTipoIcono(promo.tipo) }} me-1"></i>{{ promo.tipo }}
+              </span>
+              <span class="badge" [ngClass]="promo.activa && !estaVencida(promo.fechaFin) ? 'text-bg-success' : 'text-bg-secondary'">
+                {{ promo.activa && !estaVencida(promo.fechaFin) ? 'Activa' : 'Inactiva' }}
+              </span>
+            </div>
+            <div class="dropdown-custom" *ngIf="currentUserRole === 'admin'">
+              <button class="btn-icon" (click)="toggleDropdown(promo.id)">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+              <div class="dropdown-menu-custom" [class.show]="dropdownAbierto === promo.id">
+                <a (click)="editarPromocion(promo.id)"><i class="bi bi-pencil me-2"></i>Editar</a>
+                <a (click)="duplicarPromocion(promo.id)"><i class="bi bi-files me-2"></i>Duplicar</a>
+                <hr>
+                <a class="text-danger" (click)="eliminarPromocion(promo.id)"><i class="bi bi-trash me-2"></i>Eliminar</a>
+              </div>
+            </div>
+          </div>
+  
+          <div class="promo-body">
+            <h3 class="promo-titulo">{{ promo.titulo }}</h3>
+            <p class="promo-descripcion">{{ promo.descripcion }}</p>
+  
+            <div class="promo-descuento" *ngIf="promo.descuento > 0">
+              <span class="descuento-valor" *ngIf="promo.tipo === 'porcentaje'">{{ promo.descuento }}%</span>
+              <span class="descuento-valor" *ngIf="promo.tipo === 'monto'">${{ promo.descuento }}</span>
+              <span class="descuento-texto">de descuento</span>
+            </div>
+  
+            <div class="promo-codigo">
+              <i class="bi bi-tag-fill me-2"></i>
+              <code>{{ promo.codigo }}</code>
+            </div>
+  
+            <div class="promo-fechas">
+              <div class="fecha-item">
+                <i class="bi bi-calendar-check me-1"></i>
+                <small>Desde: {{ promo.fechaInicio | date:'dd/MM/yyyy' }}</small>
+              </div>
+              <div class="fecha-item" [class.text-danger]="estaVencida(promo.fechaFin)">
+                <i class="bi bi-calendar-x me-1"></i>
+                <small>Hasta: {{ promo.fechaFin | date:'dd/MM/yyyy' }}</small>
+              </div>
+            </div>
+  
+            <div class="promo-productos" *ngIf="promo.productos.length > 0">
+              <small class="text-muted">Productos incluidos:</small>
+              <div class="productos-tags">
+                <span class="producto-tag" *ngFor="let prod of promo.productos">{{ prod }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal crear/editar -->
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()" *ngIf="promocionEditando">
+      <div class="modal-header-custom">
+        <h5><i class="bi bi-megaphone me-2"></i>{{ promocionEditando.id > 1000 ? 'Nueva' : 'Editar' }} Promoción</h5>
+        <button class="btn-close-custom" (click)="cerrarModal()">×</button>
+      </div>
+      <div class="modal-body-custom">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Título</label>
+          <input type="text" class="form-control" [(ngModel)]="promocionEditando.titulo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Descripción</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="promocionEditando.descripcion"></textarea>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Tipo</label>
+            <select class="form-select" [(ngModel)]="promocionEditando.tipo">
+              <option value="porcentaje">Porcentaje</option>
+              <option value="monto">Monto fijo</option>
+              <option value="2x1">2x1</option>
+              <option value="combo">Combo</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Descuento</label>
+            <input type="number" class="form-control" [(ngModel)]="promocionEditando.descuento">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Código</label>
+          <input type="text" class="form-control" [(ngModel)]="promocionEditando.codigo">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Fecha Inicio</label>
+            <input type="date" class="form-control" [ngModel]="promocionEditando.fechaInicio | date:'yyyy-MM-dd'" (ngModelChange)="promocionEditando.fechaInicio = $event">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Fecha Fin</label>
+            <input type="date" class="form-control" [ngModel]="promocionEditando.fechaFin | date:'yyyy-MM-dd'" (ngModelChange)="promocionEditando.fechaFin = $event">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Estado</label>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" [(ngModel)]="promocionEditando.activa" id="switchActiva">
+            <label class="form-check-label" for="switchActiva">
+              {{ promocionEditando.activa ? 'Activa' : 'Inactiva' }}
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-custom">
+        <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn btn-brand" (click)="guardarPromocion()">
+          <i class="bi bi-check-circle me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>

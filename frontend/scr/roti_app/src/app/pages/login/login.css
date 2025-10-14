@@ -1,0 +1,162 @@
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #FF6B35 0%, #f4a261 100%);
+    padding: 1rem;
+  }
+  
+  .login-card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 3rem 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  
+  .login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .login-header i {
+    font-size: 4rem;
+    color: #FF6B35;
+    margin-bottom: 1rem;
+  }
+  
+  .login-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #182230;
+    margin-bottom: 0.5rem;
+  }
+  
+  .login-header p {
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  .alert-error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    color: #182230;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s;
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: #FF6B35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  }
+  
+  .btn-login {
+    width: 100%;
+    padding: 1rem;
+    background: #FF6B35;
+    color: white;
+    border: none;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+  
+  .btn-login:hover {
+    background: #e55a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 107, 53, 0.3);
+  }
+  
+  .btn-login:active {
+    transform: translateY(0);
+  }
+  
+  .login-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+  }
+  
+  .login-footer small {
+    display: block;
+    color: #6b7280;
+    margin: 0.25rem 0;
+  }
+  
+  .login-footer strong {
+    color: #182230;
+  }
+  
+  .credentials-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .credential-item {
+    background: #f9fafb;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .credential-item small {
+    display: block;
+    margin: 0.15rem 0;
+  }
+  
+  .role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .role-badge.admin {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  
+  .role-badge.cliente {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .role-badge.repartidor {
+    background: #dcfce7;
+    color: #166534;
+  }
