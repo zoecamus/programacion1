@@ -1,0 +1,278 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="bi bi-basket-fill me-2"></i>Productos</h1>
+      <p class="page-subtitle">Explora nuestro delicioso menú</p>
+    </div>
+    <button class="btn btn-brand position-relative" (click)="mostrarCarrito = true" *ngIf="cantidadItems > 0">
+      <i class="bi bi-cart-fill me-2"></i>Ver carrito
+      <span class="badge-cart">{{ cantidadItems }}</span>
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filtros-section">
+    <div class="search-box">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control" placeholder="Buscar productos..." [(ngModel)]="busqueda">
+      </div>
+    </div>
+
+    <div class="categorias-tabs">
+      <button class="categoria-btn" [class.active]="categoriaSeleccionada === 'todas'" (click)="categoriaSeleccionada = 'todas'">
+        Todas
+      </button>
+      <button class="categoria-btn" [class.active]="categoriaSeleccionada === cat.id_categoria.toString()" 
+              *ngFor="let cat of categorias" 
+              (click)="categoriaSeleccionada = cat.id_categoria.toString()">
+        {{ cat.nombre }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" style="text-align: center; padding: 3rem;">
+    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+    <p>Cargando productos...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+    <i class="bi bi-exclamation-circle"></i> {{ error }}
+  </div>
+
+  <!-- Grid de productos -->
+  <div class="productos-grid" *ngIf="!loading && !error">
+    <div class="producto-card" *ngFor="let producto of productosFiltrados">
+      <!-- ↑ SIN (click) aquí -->
+      
+      <span class="badge-stock" [class.stock-bajo]="producto.stock < 10" [class.sin-stock]="producto.stock === 0">
+        Stock: {{ producto.stock }}
+      </span>
+      
+      <!-- Botón de editar (solo admin) -->
+      <button *ngIf="isAdmin()" 
+              class="btn-edit-producto" 
+              (click)="editarProducto(producto, $event)" 
+              title="Editar producto">
+        <i class="bi bi-pencil"></i>
+      </button>
+    
+      <img src="assets/logo/producto-default.png" [alt]="producto.nombre" class="producto-imagen">
+      <div class="producto-body">
+        <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+        <p class="producto-descripcion">{{ producto.descripcion }}</p>
+        <div class="producto-footer">
+          <span class="producto-precio">${{ producto.precio.toLocaleString('es-AR') }}</span>
+          <!-- SOLO este botón tiene click -->
+          <button class="btn btn-brand btn-sm" 
+                  (click)="agregarAlCarrito(producto)" 
+                  [disabled]="producto.stock === 0"
+                  *ngIf="currentUserRole === 'Cliente'">
+            <i class="bi bi-cart-plus"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  <div *ngIf="!loading && !error && productosFiltrados.length === 0" class="no-resultados">
+    <i class="bi bi-search"></i>
+    <p>No se encontraron productos</p>
+  </div>
+</div>
+
+<!-- Panel lateral del carrito -->
+<div class="modal-overlay" *ngIf="mostrarCarrito" (click)="mostrarCarrito = false">
+  <div class="carrito-panel" (click)="$event.stopPropagation()">
+    <div class="carrito-header">
+      <h2><i class="bi bi-cart-fill me-2"></i>Tu Carrito</h2>
+      <button class="btn-close-custom" (click)="mostrarCarrito = false">×</button>
+    </div>
+
+    <div class="carrito-body">
+      <div *ngIf="carrito.length === 0" class="carrito-vacio">
+        <i class="bi bi-cart-x"></i>
+        <p>Tu carrito está vacío</p>
+      </div>
+
+      <div class="carrito-item" *ngFor="let item of carrito">
+        <img src="assets/logo/producto-default.png" [alt]="item.producto.nombre">
+        <div class="item-info">
+          <h4>{{ item.producto.nombre }}</h4>
+          <p class="item-precio">${{ item.producto.precio.toLocaleString('es-AR') }}</p>
+        </div>
+        <div class="item-cantidad">
+          <button class="btn-cantidad" (click)="cambiarCantidad(item.producto.id_producto, -1)">-</button>
+          <span>{{ item.cantidad }}</span>
+          <button class="btn-cantidad" (click)="cambiarCantidad(item.producto.id_producto, 1)">+</button>
+        </div>
+        <button class="btn-eliminar" (click)="quitarDelCarrito(item.producto.id_producto)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="carrito-footer" *ngIf="carrito.length > 0">
+      <div class="total-section">
+        <span class="total-label">Total:</span>
+        <span class="total-monto">${{ totalCarrito.toLocaleString('es-AR') }}</span>
+      </div>
+      <button class="btn btn-brand w-100 btn-lg" (click)="finalizarCompra()">
+        <i class="bi bi-check-circle me-2"></i>Finalizar compra
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Producto (Admin) -->
+<div class="modal-overlay" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
+  <div class="modal-container" (click)="$event.stopPropagation()" *ngIf="productoEditando">
+    <div class="modal-header-custom">
+      <h5><i class="bi bi-pencil me-2"></i>Editar Producto</h5>
+      <button class="btn-close-custom" (click)="cerrarModalEditar()">×</button>
+    </div>
+    
+    <div class="modal-body-custom">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Nombre</label>
+        <input type="text" class="form-control" [(ngModel)]="productoEditando.nombre">
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Descripción</label>
+        <textarea class="form-control" rows="3" [(ngModel)]="productoEditando.descripcion"></textarea>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-semibold">Precio</label>
+          <input type="number" class="form-control" [(ngModel)]="productoEditando.precio" step="0.01">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-semibold">Stock</label>
+          <input type="number" class="form-control" [(ngModel)]="productoEditando.stock">
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Categoría</label>
+        <select class="form-select" [(ngModel)]="productoEditando.id_categoria">
+          <option *ngFor="let cat of categorias" [value]="cat.id_categoria">{{ cat.nombre }}</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="modal-footer-custom">
+      <button class="btn btn-secondary" (click)="cerrarModalEditar()">Cancelar</button>
+      <button class="btn btn-brand" (click)="guardarProducto()">
+        <i class="bi bi-check-circle me-1"></i>Guardar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.btn-edit-producto {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 10;
+  transition: all 0.3s;
+}
+
+.btn-edit-producto:hover {
+  background: #FF6B35;
+  color: white;
+  transform: scale(1.1);
+}
+
+.sin-stock {
+  background: #dc3545 !important;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 1rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header-custom {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header-custom h5 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-body-custom {
+  padding: 1.5rem;
+}
+
+.modal-footer-custom {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #182230;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.col-md-6 {
+  flex: 1;
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #FF6B35;
+}
+</style>

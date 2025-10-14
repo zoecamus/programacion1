@@ -1,0 +1,205 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="bi bi-clipboard-check-fill me-2"></i>Pedidos</h1>
+      <p class="page-subtitle">Gestión de pedidos para retiro en el local</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filtros-section">
+    <div class="search-box">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control" placeholder="Buscar por ID o cliente..." [(ngModel)]="busqueda">
+      </div>
+    </div>
+
+    <div class="estados-tabs">
+      <button class="estado-btn" [class.active]="filtroEstado === 'todos'" (click)="filtroEstado = 'todos'">
+        Todos
+      </button>
+      <button class="estado-btn" [class.active]="filtroEstado === 'Pendiente'" (click)="filtroEstado = 'Pendiente'">
+        Pendientes
+      </button>
+      <button class="estado-btn" [class.active]="filtroEstado === 'En preparación'" (click)="filtroEstado = 'En preparación'">
+        En preparación
+      </button>
+      <button class="estado-btn" [class.active]="filtroEstado === 'Listo para retiro'" (click)="filtroEstado = 'Listo para retiro'">
+        Listos para retirar
+      </button>
+      <button class="estado-btn" [class.active]="filtroEstado === 'Entregado'" (click)="filtroEstado = 'Entregado'">
+        Entregados
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" style="text-align: center; padding: 3rem;">
+    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+    <p>Cargando pedidos...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+    <i class="bi bi-exclamation-circle"></i> {{ error }}
+  </div>
+
+  <!-- Lista de pedidos -->
+  <div class="pedidos-lista" *ngIf="!loading && !error">
+    <div class="pedido-card" *ngFor="let pedido of pedidos" (click)="verDetalle(pedido)">
+      <div class="pedido-header">
+        <div>
+          <h3 class="pedido-numero">Pedido #{{ pedido.id_pedido }}</h3>
+          <p class="pedido-fecha">Cliente: {{ pedido.cliente }}</p>
+        </div>
+        <span class="badge" [ngClass]="getEstadoBadgeClass(pedido.estado)">
+          <i class="bi bi-{{ getEstadoIcono(pedido.estado) }} me-1"></i>{{ pedido.estado }}
+        </span>
+      </div>
+
+      <div class="pedido-body">
+        <div class="info-row">
+          <i class="bi bi-person-fill"></i>
+          <span><strong>Cliente:</strong> {{ pedido.cliente }}</span>
+        </div>
+        <div class="info-row">
+          <i class="bi bi-telephone-fill"></i>
+          <span><strong>Teléfono:</strong> {{ pedido.telefono || 'No especificado' }}</span>
+        </div>
+        <div class="info-row">
+          <i class="bi bi-credit-card"></i>
+          <span><strong>Método de pago:</strong> {{ pedido.metodo_pago }}</span>
+        </div>
+      </div>
+
+      <div class="pedido-footer">
+        <div class="pedido-items">
+          <i class="bi bi-basket"></i>
+          <span>{{ pedido.items.length }} producto(s)</span>
+        </div>
+        <span class="pedido-total">${{ pedido.total.toLocaleString('es-AR') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error && pedidos.length === 0" class="no-resultados">
+    <i class="bi bi-inbox"></i>
+    <p>No se encontraron pedidos</p>
+  </div>
+</div>
+
+<!-- Modal detalle del pedido -->
+<div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+  <div class="modal-container-pedido" (click)="$event.stopPropagation()" *ngIf="pedidoDetalle">
+    <div class="detalle-seccion">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">Pedido #{{ pedidoDetalle.id_pedido }}</h2>
+        <button class="btn-close-custom" (click)="cerrarModal()">×</button>
+      </div>
+      <p style="color: #6b7280; margin: 0.5rem 0 0 0;">
+        Cliente: {{ pedidoDetalle.cliente }}
+      </p>
+    </div>
+
+    <div class="detalle-seccion">
+      <h3>Estado del pedido</h3>
+      <div class="estado-timeline">
+        <div class="timeline-item completed">
+          <i class="bi bi-check-circle"></i>
+          <span>Pendiente</span>
+        </div>
+        <div class="timeline-line" [class.completed]="pedidoDetalle.estado !== 'Pendiente'"></div>
+        
+        <div class="timeline-item" [class.completed]="pedidoDetalle.estado === 'En preparación' || pedidoDetalle.estado === 'Listo para retiro' || pedidoDetalle.estado === 'Entregado'">
+          <i class="bi bi-hourglass-split"></i>
+          <span>En preparación</span>
+        </div>
+        <div class="timeline-line" [class.completed]="pedidoDetalle.estado === 'Listo para retiro' || pedidoDetalle.estado === 'Entregado'"></div>
+        
+        <div class="timeline-item" [class.completed]="pedidoDetalle.estado === 'Listo para retiro' || pedidoDetalle.estado === 'Entregado'">
+          <i class="bi bi-bell-fill"></i>
+          <span>Listo</span>
+        </div>
+        <div class="timeline-line" [class.completed]="pedidoDetalle.estado === 'Entregado'"></div>
+        
+        <div class="timeline-item" [class.completed]="pedidoDetalle.estado === 'Entregado'">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Entregado</span>
+        </div>
+      </div>
+
+      <div class="estado-acciones" *ngIf="currentUserRole === 'Administrador' || currentUserRole === 'Encargado'">
+        <button class="btn btn-sm btn-warning" *ngIf="pedidoDetalle.estado === 'Pendiente'" 
+                (click)="cambiarEstado(pedidoDetalle, 'En preparación')">
+          Iniciar preparación
+        </button>
+        <button class="btn btn-sm btn-info" *ngIf="pedidoDetalle.estado === 'En preparación'" 
+                (click)="cambiarEstado(pedidoDetalle, 'Listo para retiro')">
+          Marcar como listo
+        </button>
+        <button class="btn btn-sm btn-success" *ngIf="pedidoDetalle.estado === 'Listo para retiro'" 
+                (click)="cambiarEstado(pedidoDetalle, 'Entregado')">
+          Cliente retiró
+        </button>
+      </div>
+    </div>
+
+    <div class="detalle-seccion">
+      <h3>Información del pedido</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <i class="bi bi-person-fill"></i>
+          <div>
+            <small style="color: #6b7280; display: block;">Cliente</small>
+            <strong>{{ pedidoDetalle.cliente }}</strong>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="bi bi-telephone-fill"></i>
+          <div>
+            <small style="color: #6b7280; display: block;">Teléfono</small>
+            <strong>{{ pedidoDetalle.telefono || 'No especificado' }}</strong>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="bi bi-credit-card"></i>
+          <div>
+            <small style="color: #6b7280; display: block;">Método de pago</small>
+            <strong>{{ pedidoDetalle.metodo_pago }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detalle-seccion">
+      <h3>Productos</h3>
+      <div class="items-lista">
+        <div class="item-row" *ngFor="let item of pedidoDetalle.items">
+          <span class="item-nombre">{{ item.producto }}</span>
+          <span class="item-cantidad">x{{ item.cantidad }}</span>
+          <span class="item-precio">${{ (item.precio * item.cantidad).toLocaleString('es-AR') }}</span>
+        </div>
+      </div>
+
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-monto">${{ pedidoDetalle.total.toLocaleString('es-AR') }}</span>
+      </div>
+    </div>
+
+    <div class="detalle-seccion" style="display: flex; justify-content: space-between;">
+      <button class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+      <button class="btn btn-brand" (click)="imprimirTicket(pedidoDetalle)">
+        <i class="bi bi-printer me-1"></i> Imprimir ticket
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>

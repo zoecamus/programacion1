@@ -10,40 +10,39 @@ class Usuarios(db.Model):
     telefono = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(64), nullable=False, unique=True, index=True)
     password = db.Column(db.String(255), nullable=False)
-    usuario_pedido = db.relationship('Pedidos', back_populates = 'pedido_usuario', cascade = "all, delete-orphan")#1 a N relacion
-    usuario_factura = db.relationship('Facturas', back_populates = 'factura_usuario', cascade = "all, delete-orphan")#1 a N relacion
-    usuario_valoracion = db.relationship('Valoraciones', back_populates = 'valoracion_usuario', cascade = "all, delete-orphan")#1 a N relacion
-    usuario_notificacion = db.relationship('Notificaciones',back_populates = 'notificacion_usuario', cascade = "all, delete-orphan")#1 a N relacion
+    estado = db.Column(db.Enum('Activo', 'Bloqueado', 'Pendiente'), default='Activo')  # ← AGREGAR ESTO
+    
+    usuario_pedido = db.relationship('Pedidos', back_populates = 'pedido_usuario', cascade = "all, delete-orphan")
+    usuario_factura = db.relationship('Facturas', back_populates = 'factura_usuario', cascade = "all, delete-orphan")
+    usuario_valoracion = db.relationship('Valoraciones', back_populates = 'valoracion_usuario', cascade = "all, delete-orphan")
+    usuario_notificacion = db.relationship('Notificaciones',back_populates = 'notificacion_usuario', cascade = "all, delete-orphan")
     
     def puede_comprar(self):
-        return self.rol == 'Cliente'
+        return self.rol == 'Cliente' and self.estado == 'Activo'
 
     def puede_cargar_producto(self):
-        return self.rol in ['Encargado', 'Administrador']
+        return self.rol in ['Encargado', 'Administrador'] and self.estado == 'Activo'
 
     def puede_eliminar_usuario(self):
-        return self.rol == 'Administrador'
+        return self.rol == 'Administrador' and self.estado == 'Activo'
 
     def puede_ver_panel_admin(self):
-        return self.rol == 'Administrador'
+        return self.rol == 'Administrador' and self.estado == 'Activo'
 
-    #no permite leerla
     @property
     def plain_password(self):
         raise AttributeError('Password cant be read')
     
-    #toma un valor en texto plano
-    #calcula el hash y lo guarda en el atributo password
     @plain_password.setter
     def plain_password(self, password):
         self.password = generate_password_hash(password)
-    #Método que compara una contraseña en texto plano con el hash guardado en la db
+    
     def validate_pass(self,password):
         return check_password_hash(self.password, password)
     
     def __repr__(self):
         return '<Usuario: %r >' % (self.rol)
-    #Convertir objeto en JSON
+    
     def to_json(self):
         user_json = {
             'id': self.id_usuario,
@@ -51,7 +50,8 @@ class Usuarios(db.Model):
             'apellido': str(self.apellido),
             'rol': str(self.rol),
             'telefono': str(self.telefono),
-            'email': str(self.email)
+            'email': str(self.email),
+            'estado': str(self.estado)  # ← AGREGAR ESTO
         }
         return user_json
 
@@ -63,5 +63,14 @@ class Usuarios(db.Model):
         rol = usuario_json.get('rol')
         telefono = usuario_json.get('telefono')
         email = usuario_json.get('email')
-    # No obtengas ni devuelvas el password acá
-        return Usuarios(id_usuario=id_usuario, nombre=nombre, apellido=apellido,rol=rol, telefono=telefono, email=email)
+        estado = usuario_json.get('estado', 'Activo')  # ← AGREGAR ESTO
+        
+        return Usuarios(
+            id_usuario=id_usuario,
+            nombre=nombre,
+            apellido=apellido,
+            rol=rol,
+            telefono=telefono,
+            email=email,
+            estado=estado
+        )

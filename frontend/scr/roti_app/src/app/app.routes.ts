@@ -5,12 +5,12 @@ import { AuthGuard } from './guards/auth.guards';
 import { ProductosComponent } from './pages/productos/productos';
 import { PedidosComponent } from './pages/pedidos/pedidos';
 import { UsuariosComponent } from './pages/usuarios/usuarios';
+import { PromocionesComponent } from './pages/promociones/promociones';  
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   
-  // Dashboard para Administrador
   { 
     path: 'dashboard/admin', 
     component: DashboardComponent,
@@ -18,7 +18,6 @@ export const routes: Routes = [
     data: { roles: ['Administrador'] }
   },
   
-  // Dashboard para Encargado
   { 
     path: 'dashboard/encargado', 
     component: DashboardComponent,
@@ -26,15 +25,13 @@ export const routes: Routes = [
     data: { roles: ['Encargado'] }
   },
   
-  // Productos (para clientes)
   { 
     path: 'productos', 
     component: ProductosComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['Cliente', 'Administrador'] }
+    data: { roles: ['Cliente', 'Administrador', 'Encargado'] }
   },
   
-  // Pedidos
   { 
     path: 'pedidos', 
     component: PedidosComponent,
@@ -42,12 +39,18 @@ export const routes: Routes = [
     data: { roles: ['Encargado', 'Administrador', 'Cliente'] }
   },
   
-  // Usuarios (solo admin)
   { 
     path: 'usuarios', 
     component: UsuariosComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['Administrador'] }
+    data: { roles: ['Administrador', 'Encargado'] }
+  },
+  
+  { 
+    path: 'promociones', 
+    component: PromocionesComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['Administrador', 'Encargado'] }
   },
   
   { path: '**', redirectTo: '/login' }

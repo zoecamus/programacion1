@@ -2,17 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserRole } from '../../services/auth.services';
-
-interface Producto {
-  id: number;
-  nombre: string;
-  categoria: string;
-  precio: number;
-  stock: number;
-  imagen: string;
-  descripcion: string;
-  activo: boolean;
-}
+import { ProductosService, Producto, Categoria } from '../../services/productos.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-productos',
@@ -28,39 +19,80 @@ export class ProductosComponent implements OnInit {
   carrito: { producto: Producto, cantidad: number }[] = [];
   mostrarCarrito: boolean = false;
   
+  // Modal editar producto
+  mostrarModalEditar: boolean = false;
+  productoEditando: Producto | null = null;
+  
   // Filtros
   busqueda: string = '';
   categoriaSeleccionada: string = 'todas';
   
-  categorias = ['todas', 'RotiPrincipal', 'RotiGuarniciones', 'RotiPostres'];
-  
-  productos: Producto[] = [
-    { id: 1, nombre: 'Patitas de pollo x12', categoria: 'RotiPrincipal', precio: 8500, stock: 50, imagen: 'assets/logo/RotiPatitas.png', descripcion: 'Deliciosas patitas de pollo cocidas y doradas', activo: true },
-    { id: 2, nombre: 'Hamburguesa clásica', categoria: 'RotiPrincipal', precio: 10000, stock: 20, imagen: 'assets/logo/rotiBurger.png', descripcion: 'Hamburguesa con carne, lechuga, tomate y queso', activo: true },
-    { id: 3, nombre: 'Ensalada fresca', categoria: 'RotiGuarniciones', precio: 2200, stock: 80, imagen: 'assets/logo/RotiEnsalada.png', descripcion: 'Ensalada mixta con verduras de estación', activo: true },
-    { id: 4, nombre: 'Papas fritas', categoria: 'RotiGuarniciones', precio: 5000, stock: 25, imagen: 'assets/logo/RotiPapitasFritas.png', descripcion: 'Papas cortadas y fritas al momento', activo: true },
-    { id: 5, nombre: 'Cheesecake', categoria: 'RotiPostres', precio: 2800, stock: 10, imagen: 'assets/logo/Roticheese.png', descripcion: 'Cheesecake cremoso con base de galletas', activo: true },
-    { id: 6, nombre: 'Chocotorta', categoria: 'RotiPostres', precio: 2700, stock: 5, imagen: 'assets/logo/Rotichoco.png', descripcion: 'Clásica chocotorta argentina con dulce de leche', activo: true },
-    { id: 7, nombre: 'Milanesa napolitana', categoria: 'RotiPrincipal', precio: 12000, stock: 35, imagen: 'assets/logo/RotiPatitas.png', descripcion: 'Milanesa con jamón, queso y salsa', activo: true },
-    { id: 8, nombre: 'Pizza muzzarella', categoria: 'RotiPrincipal', precio: 9500, stock: 15, imagen: 'assets/logo/rotiBurger.png', descripcion: 'Pizza clásica con muzzarella de primera', activo: true },
-    { id: 9, nombre: 'Empanadas x12', categoria: 'RotiPrincipal', precio: 7200, stock: 60, imagen: 'assets/logo/RotiPatitas.png', descripcion: 'Docena de empanadas de carne, pollo o verdura', activo: true },
-    { id: 10, nombre: 'Puré de papa', categoria: 'RotiGuarniciones', precio: 3500, stock: 40, imagen: 'assets/logo/RotiEnsalada.png', descripcion: 'Puré cremoso de papas naturales', activo: true },
-    { id: 11, nombre: 'Flan casero', categoria: 'RotiPostres', precio: 2500, stock: 8, imagen: 'assets/logo/Roticheese.png', descripcion: 'Flan casero con dulce de leche y crema', activo: true },
-    { id: 12, nombre: 'Tarta de limón', categoria: 'RotiPostres', precio: 3200, stock: 12, imagen: 'assets/logo/Rotichoco.png', descripcion: 'Tarta con relleno de limón y merengue', activo: true }
-  ];
+  categorias: Categoria[] = [];
+  productos: Producto[] = [];
+  loading: boolean = true;
+  error: string = '';
 
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private productosService: ProductosService,
+    private http: HttpClient
+  ) {}
 
   ngOnInit() {
     this.currentUserRole = this.authService.getUserRole();
+    this.cargarCategorias();
+    this.cargarProductos();
+  }
+
+  private getHeaders(): HttpHeaders {
+    const user = localStorage.getItem('currentUser');
+    const token = user ? JSON.parse(user).access_token : '';
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  }
+
+  cargarCategorias() {
+    this.productosService.getCategorias().subscribe({
+      next: (data) => {
+        console.log('Categorías cargadas:', data);
+        this.categorias = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar categorías:', error);
+      }
+    });
+  }
+
+  cargarProductos() {
+    this.loading = true;
+    this.productosService.getProductos({ per_page: 100 }).subscribe({
+      next: (data) => {
+        console.log('Productos cargados:', data);
+        this.productos = data.productos || data;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar productos:', error);
+        this.error = 'Error al cargar los productos';
+        this.loading = false;
+      }
+    });
   }
 
   get productosFiltrados(): Producto[] {
-    let filtrados = this.productos.filter(p => p.activo);
+    let filtrados = this.productos;
+    
+    // Si no es admin, solo mostrar productos con stock
+    if (this.currentUserRole !== 'Administrador') {
+      filtrados = filtrados.filter(p => p.stock > 0);
+    }
     
     // Filtrar por categoría
     if (this.categoriaSeleccionada !== 'todas') {
-      filtrados = filtrados.filter(p => p.categoria === this.categoriaSeleccionada);
+      const categoriaId = parseInt(this.categoriaSeleccionada);
+      filtrados = filtrados.filter(p => p.id_categoria === categoriaId);
     }
     
     // Filtrar por búsqueda
@@ -75,26 +107,90 @@ export class ProductosComponent implements OnInit {
     return filtrados;
   }
 
+  // Verificar si es admin
+  isAdmin(): boolean {
+    return this.currentUserRole === 'Administrador';
+  }
+
+  // Editar producto (solo admin)
+  editarProducto(producto: Producto, event?: Event) {
+    // Prevenir que se propague el click
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    if (!this.isAdmin()) {
+      alert('Solo el administrador puede editar productos');
+      return;
+    }
+    this.productoEditando = { ...producto };
+    this.mostrarModalEditar = true;
+  }
+
+  cerrarModalEditar() {
+    this.mostrarModalEditar = false;
+    this.productoEditando = null;
+  }
+
+  guardarProducto() {
+    if (!this.productoEditando) return;
+
+    this.http.put(
+      `http://localhost:7000/product/${this.productoEditando.id_producto}`,
+      this.productoEditando,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (response: any) => {
+        const index = this.productos.findIndex(p => p.id_producto === this.productoEditando!.id_producto);
+        if (index !== -1) {
+          this.productos[index] = { ...this.productoEditando! };
+        }
+        alert('Producto actualizado correctamente');
+        this.cerrarModalEditar();
+      },
+      error: (error) => {
+        console.error('Error al actualizar producto:', error);
+        alert('Error al actualizar el producto');
+      }
+    });
+  }
+
+  // Carrito
   agregarAlCarrito(producto: Producto) {
-    const item = this.carrito.find(i => i.producto.id === producto.id);
+    if (producto.stock === 0) {
+      alert('Producto sin stock');
+      return;
+    }
+
+    const item = this.carrito.find(i => i.producto.id_producto === producto.id_producto);
     if (item) {
-      item.cantidad++;
+      if (item.cantidad < producto.stock) {
+        item.cantidad++;
+        alert(`${producto.nombre} agregado al carrito`);
+      } else {
+        alert(`No hay más stock disponible de ${producto.nombre}`);
+      }
     } else {
       this.carrito.push({ producto, cantidad: 1 });
+      alert(`${producto.nombre} agregado al carrito`);
     }
-    alert(`${producto.nombre} agregado al carrito`);
   }
 
   quitarDelCarrito(productoId: number) {
-    this.carrito = this.carrito.filter(i => i.producto.id !== productoId);
+    this.carrito = this.carrito.filter(i => i.producto.id_producto !== productoId);
   }
 
   cambiarCantidad(productoId: number, cambio: number) {
-    const item = this.carrito.find(i => i.producto.id === productoId);
+    const item = this.carrito.find(i => i.producto.id_producto === productoId);
     if (item) {
-      item.cantidad += cambio;
-      if (item.cantidad <= 0) {
+      const nuevaCantidad = item.cantidad + cambio;
+      
+      if (nuevaCantidad <= 0) {
         this.quitarDelCarrito(productoId);
+      } else if (nuevaCantidad <= item.producto.stock) {
+        item.cantidad = nuevaCantidad;
+      } else {
+        alert(`No hay más stock disponible de ${item.producto.nombre}`);
       }
     }
   }
@@ -112,8 +208,44 @@ export class ProductosComponent implements OnInit {
       alert('El carrito está vacío');
       return;
     }
-    alert(`Compra finalizada! Total: $${this.totalCarrito.toLocaleString('es-AR')}`);
-    this.carrito = [];
-    this.mostrarCarrito = false;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      alert('Debes iniciar sesión para realizar un pedido');
+      return;
+    }
+
+    const items = this.carrito.map(item => ({
+      producto: item.producto.nombre,
+      cantidad: item.cantidad,
+      precio: item.producto.precio
+    }));
+
+    const nuevoPedido = {
+      id_usuario: currentUser.email,
+      items: items,
+      total: this.totalCarrito,
+      estado: 'Pendiente',
+      metodo_pago: 'Efectivo'
+    };
+
+    console.log('Creando pedido:', nuevoPedido);
+
+    this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
+      next: (response) => {
+        alert(`¡Pedido realizado con éxito!\n\nTotal: $${this.totalCarrito.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`);
+        this.carrito = [];
+        this.mostrarCarrito = false;
+      },
+      error: (error) => {
+        console.error('Error al crear pedido:', error);
+        alert('Error al crear el pedido. Intenta de nuevo.');
+      }
+    });
+  }
+
+  getNombreCategoria(id_categoria: number): string {
+    const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
+    return categoria ? categoria.nombre : 'Sin categoría';
   }
 }

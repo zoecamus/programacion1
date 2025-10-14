@@ -14,17 +14,17 @@
     <div *ngIf="isAdmin()" class="admin-section">
       <h2>Panel de Administrador</h2>
       <div class="cards">
-        <div class="card" routerLink="/usuarios">
+        <div class="card" [routerLink]="['/usuarios']">
           <i class="bi bi-people-fill"></i>
           <h3>Usuarios</h3>
           <p>Gestionar usuarios del sistema</p>
         </div>
-        <div class="card" routerLink="/productos">
+        <div class="card" [routerLink]="['/productos']">
           <i class="bi bi-basket-fill"></i>
           <h3>Productos</h3>
           <p>Administrar catálogo</p>
         </div>
-        <div class="card" routerLink="/pedidos">
+        <div class="card" [routerLink]="['/pedidos']">
           <i class="bi bi-clipboard-check"></i>
           <h3>Pedidos</h3>
           <p>Ver todos los pedidos</p>
@@ -41,20 +41,20 @@
     <div *ngIf="isEncargado()" class="encargado-section">
       <h2>Panel de Encargado</h2>
       <div class="cards">
-        <div class="card" routerLink="/pedidos">
+        <div class="card" [routerLink]="['/pedidos']">
           <i class="bi bi-clipboard-check"></i>
           <h3>Pedidos</h3>
           <p>Gestionar pedidos activos</p>
         </div>
-        <div class="card" routerLink="/productos">
+        <div class="card" [routerLink]="['/productos']">
           <i class="bi bi-basket-fill"></i>
           <h3>Productos</h3>
           <p>Ver y actualizar stock</p>
         </div>
-        <div class="card">
-          <i class="bi bi-truck"></i>
-          <h3>Entregas</h3>
-          <p>Organizar repartos</p>
+        <div class="card" [routerLink]="['/promociones']">
+          <i class="bi bi-megaphone-fill"></i>
+          <h3>Promociones</h3>
+          <p>Gestionar ofertas y descuentos</p>
         </div>
       </div>
     </div>

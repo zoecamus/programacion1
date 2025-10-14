@@ -1,56 +1,95 @@
-<section class="container my-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4">Usuarios registrados</h1>
-    <div class="input-group" style="max-width: 300px;">
-      <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input type="text" class="form-control" placeholder="Buscar..." [(ngModel)]="busqueda">
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="bi bi-people-fill me-2"></i>Usuarios</h1>
+      <p class="page-subtitle">Gestión de usuarios del sistema</p>
     </div>
+    <button class="btn btn-brand" (click)="volverDashboard()">
+      <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+    </button>
   </div>
 
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>#ID</th>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Estado</th>
-          <th>Teléfono</th>
-          <th>Fecha registro</th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let usuario of usuariosFiltrados">
-          <td>{{ usuario.id }}</td>
-          <td>{{ usuario.nombre }}</td>
-          <td>{{ usuario.email }}</td>
-          <td>
-            <span class="badge" [ngClass]="getRolBadgeClass(usuario.rol)">
-              {{ getRolTexto(usuario.rol) }}
-            </span>
-          </td>
-          <td>
-            <span class="badge"
-              [ngClass]="{
-                'text-bg-success': usuario.estado === 'Activo',
-                'text-bg-warning': usuario.estado === 'Pendiente',
-                'text-bg-danger': usuario.estado === 'Bloqueado'
-              }">
-              {{ usuario.estado }}
-            </span>
-          </td>
-          <td>{{ usuario.telefono }}</td>
-          <td>{{ usuario.fechaRegistro | date: 'shortDate' }}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-secondary me-1" (click)="editarUsuario(usuario.id)">Editar</button>
-            <button class="btn btn-sm btn-outline-danger me-1" (click)="eliminarUsuario(usuario.id)">
-              <i class="bi bi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Loading -->
+  <div *ngIf="loading" style="text-align: center; padding: 3rem;">
+    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+    <p>Cargando usuarios...</p>
   </div>
-</section>
+
+  <!-- Error -->
+  <div *ngIf="error" style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+    <i class="bi bi-exclamation-circle"></i> {{ error }}
+  </div>
+
+  <div class="card" *ngIf="!loading && !error">
+    <div class="card-header">
+      <div class="input-group" style="max-width: 400px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control" placeholder="Buscar usuario..." [(ngModel)]="busqueda">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Teléfono</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuariosFiltrados">
+            <td>{{ usuario.id }}</td>
+            <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
+            <td>{{ usuario.email }}</td>
+            <td>
+              <span class="badge" [ngClass]="getRolBadgeClass(usuario.rol)">
+                {{ usuario.rol }}
+              </span>
+            </td>
+            <td>
+              <select 
+                class="form-select form-select-sm" 
+                [value]="usuario.estado" 
+                (change)="cambiarEstado(usuario, $any($event.target).value)"
+                [disabled]="!puedeEditarEstado()"
+                style="width: auto; display: inline-block;">
+                <option value="Activo">Activo</option>
+                <option value="Bloqueado">Bloqueado</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </td>
+            <td>{{ usuario.telefono }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-secondary me-1" (click)="editarUsuario(usuario.id)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button 
+                class="btn btn-sm btn-outline-danger" 
+                (click)="eliminarUsuario(usuario.id)"
+                *ngIf="puedeEliminar()">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="usuariosFiltrados.length === 0" class="no-resultados">
+        <i class="bi bi-inbox"></i>
+        <p>No se encontraron usuarios</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>

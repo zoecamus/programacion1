@@ -8,9 +8,6 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:4200"], supports_credentials=True)
-
 api = Api()
 db = SQLAlchemy()
 migrate = Migrate()
@@ -20,15 +17,15 @@ mailsender = Mail()
 def create_app():
     app = Flask(__name__)
     load_dotenv()
-
-    CORS(app, resources={
-        r"/*": {
-            "origins": ["http://localhost:4200"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
-        }
-    })
+    
+    # ← CONFIGURAR CORS DE FORMA MÁS EXPLÍCITA
+    CORS(app, 
+         origins=["http://localhost:4200"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization"],
+         supports_credentials=True,
+         expose_headers=["Content-Type", "Authorization"],
+         max_age=3600)
 
     db_path = os.getenv('DATABASE_PATH')
     db_name = os.getenv('DATABASE_NAME')
@@ -39,11 +36,12 @@ def create_app():
     if not os.path.exists(db_path):
         os.makedirs(db_path)  
 
-#Pregunta de final: ¿en que linea tengo que modificar el motor de datos y que va en esa linea?
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(db_path, db_name)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    print ("base de datos creada en:", os.path.abspath(os.path.join(db_path, db_name)))
+    print("base de datos creada en:", os.path.abspath(os.path.join(db_path, db_name)))
+    
     db.init_app(app)
+    
     with app.app_context():
         from main.models.usuarios import Usuarios
         from main.models.productos import Productos
@@ -66,7 +64,7 @@ def create_app():
     api.add_resource(resources.ProductsResource, '/products')
     api.add_resource(resources.ProductResource, '/product/<product_id>')
     api.add_resource(resources.LogInResource, '/login')
-    api.add_resource (resources.LogOutResource, '/logout')
+    api.add_resource(resources.LogOutResource, '/logout')
     api.add_resource(resources.CategoriasResource, '/categorias') 
     api.add_resource(resources.FacturasResource, '/facturas')
     api.add_resource(resources.FacturaResource, '/factura/<factura_id>')
@@ -76,7 +74,6 @@ def create_app():
     api.init_app(app)   
 
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE'))
     jwt.init_app(app)
 

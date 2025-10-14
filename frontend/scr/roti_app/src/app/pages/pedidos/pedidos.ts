@@ -1,19 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { AuthService, UserRole } from '../../services/auth.services';
 
 interface Pedido {
-  id: number;
-  fecha: Date;
+  id_pedido: number;
+  id_usuario: string;
   cliente: string;
   items: { producto: string, cantidad: number, precio: number }[];
   total: number;
-  estado: 'Recibido' | 'En preparación' | 'En camino' | 'Entregado' | 'Cancelado';
-  pagado: boolean;
-  direccion: string;
+  estado: 'Pendiente' | 'En preparación' | 'Listo para retiro' | 'Entregado';
+  metodo_pago: string;
   telefono: string;
-  repartidor?: string;
+  pagado?: boolean;
 }
 
 @Component({
@@ -26,108 +26,61 @@ interface Pedido {
 export class PedidosComponent implements OnInit {
   currentUserRole: UserRole | null = null;
   
-  // Modal
   mostrarModal: boolean = false;
   pedidoDetalle: Pedido | null = null;
   
-  // Filtros
   busqueda: string = '';
   filtroEstado: string = 'todos';
   
-  pedidosOriginales: Pedido[] = [
-    {
-      id: 901,
-      fecha: new Date('2024-10-12T10:30:00'),
-      cliente: 'María Eva Modarelli',
-      items: [
-        { producto: 'Hamburguesa clásica', cantidad: 2, precio: 10000 },
-        { producto: 'Papas fritas', cantidad: 1, precio: 5000 }
-      ],
-      total: 25000,
-      estado: 'Recibido',
-      pagado: false,
-      direccion: 'Calle Falsa 123, Las Heras',
-      telefono: '+54 261 555-1234'
-    },
-    {
-      id: 902,
-      fecha: new Date('2024-10-12T11:15:00'),
-      cliente: 'Juan Pérez',
-      items: [
-        { producto: 'Pizza muzzarella', cantidad: 1, precio: 9500 },
-        { producto: 'Cheesecake', cantidad: 2, precio: 2800 }
-      ],
-      total: 15100,
-      estado: 'En preparación',
-      pagado: true,
-      direccion: 'Av. San Martín 456',
-      telefono: '+54 261 555-5678',
-      repartidor: 'Pedro Sánchez'
-    },
-    {
-      id: 903,
-      fecha: new Date('2024-10-12T12:00:00'),
-      cliente: 'Ana García',
-      items: [
-        { producto: 'Empanadas x12', cantidad: 1, precio: 7200 },
-        { producto: 'Ensalada fresca', cantidad: 1, precio: 2200 }
-      ],
-      total: 9400,
-      estado: 'En camino',
-      pagado: true,
-      direccion: 'Las Heras Centro',
-      telefono: '+54 261 555-9012',
-      repartidor: 'Diego Fernández'
-    },
-    {
-      id: 904,
-      fecha: new Date('2024-10-11T19:30:00'),
-      cliente: 'Carlos Rodríguez',
-      items: [
-        { producto: 'Milanesa napolitana', cantidad: 1, precio: 12000 }
-      ],
-      total: 12000,
-      estado: 'Entregado',
-      pagado: true,
-      direccion: 'Barrio El Resguardo',
-      telefono: '+54 261 555-3456'
-    },
-    {
-      id: 905,
-      fecha: new Date('2024-10-11T20:00:00'),
-      cliente: 'Laura Martínez',
-      items: [
-        { producto: 'Patitas de pollo x12', cantidad: 2, precio: 8500 },
-        { producto: 'Puré de papa', cantidad: 2, precio: 3500 }
-      ],
-      total: 24000,
-      estado: 'Cancelado',
-      pagado: false,
-      direccion: 'Las Heras Norte',
-      telefono: '+54 261 555-7890'
-    }
-  ];
+  pedidosOriginales: Pedido[] = [];
+  loading: boolean = true;
+  error: string = '';
 
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private http: HttpClient
+  ) {}
 
   ngOnInit() {
     this.currentUserRole = this.authService.getUserRole();
+    this.cargarPedidos();
+  }
+
+  cargarPedidos() {
+    this.loading = true;
+    const user = localStorage.getItem('currentUser');
+    const token = user ? JSON.parse(user).access_token : '';
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    this.http.get<any>('http://localhost:7000/pedidos', { headers }).subscribe({
+      next: (response) => {
+        console.log('Pedidos cargados:', response);
+        this.pedidosOriginales = response.pedidos || response;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar pedidos:', error);
+        this.error = 'Error al cargar los pedidos';
+        this.loading = false;
+      }
+    });
   }
 
   get pedidos(): Pedido[] {
     let filtrados = this.pedidosOriginales;
     
-    // Filtrar por estado
     if (this.filtroEstado !== 'todos') {
       filtrados = filtrados.filter(p => p.estado === this.filtroEstado);
     }
     
-    // Filtrar por búsqueda
     if (this.busqueda) {
       const termino = this.busqueda.toLowerCase();
       filtrados = filtrados.filter(p => 
-        p.id.toString().includes(termino) || 
-        p.cliente.toLowerCase().includes(termino)
+        p.id_pedido?.toString().includes(termino) || 
+        p.cliente?.toLowerCase().includes(termino)
       );
     }
     
@@ -145,35 +98,56 @@ export class PedidosComponent implements OnInit {
   }
 
   cambiarEstado(pedido: Pedido, nuevoEstado: Pedido['estado']) {
-    if (confirm(`¿Cambiar el estado del pedido #${pedido.id} a "${nuevoEstado}"?`)) {
-      pedido.estado = nuevoEstado;
-      alert(`Estado actualizado a "${nuevoEstado}"`);
+    if (confirm(`¿Cambiar el estado del pedido #${pedido.id_pedido} a "${nuevoEstado}"?`)) {
+      const user = localStorage.getItem('currentUser');
+      const token = user ? JSON.parse(user).access_token : '';
+      
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      this.http.put(
+        `http://localhost:7000/pedido/${pedido.id_pedido}`,
+        { estado: nuevoEstado },
+        { headers }
+      ).subscribe({
+        next: () => {
+          pedido.estado = nuevoEstado;
+          if (this.pedidoDetalle?.id_pedido === pedido.id_pedido) {
+            this.pedidoDetalle.estado = nuevoEstado;
+          }
+          alert(`Estado actualizado a "${nuevoEstado}"`);
+        },
+        error: (error) => {
+          console.error('Error al actualizar estado:', error);
+          alert('Error al actualizar el estado del pedido');
+        }
+      });
     }
   }
 
   getEstadoBadgeClass(estado: string): string {
     switch(estado) {
-      case 'Recibido': return 'text-bg-secondary';
+      case 'Pendiente': return 'text-bg-secondary';
       case 'En preparación': return 'text-bg-warning';
-      case 'En camino': return 'text-bg-info';
+      case 'Listo para retiro': return 'text-bg-info';
       case 'Entregado': return 'text-bg-success';
-      case 'Cancelado': return 'text-bg-danger';
       default: return 'text-bg-secondary';
     }
   }
 
   getEstadoIcono(estado: string): string {
     switch(estado) {
-      case 'Recibido': return 'inbox';
+      case 'Pendiente': return 'inbox';
       case 'En preparación': return 'hourglass-split';
-      case 'En camino': return 'truck';
+      case 'Listo para retiro': return 'bell';
       case 'Entregado': return 'check-circle';
-      case 'Cancelado': return 'x-circle';
       default: return 'circle';
     }
   }
 
   imprimirTicket(pedido: Pedido) {
-    alert(`Imprimiendo ticket del pedido #${pedido.id}`);
+    alert(`Imprimiendo ticket del pedido #${pedido.id_pedido}`);
   }
 }
