@@ -2,10 +2,8 @@ from flask import request, jsonify
 from flask_restful import Resource
 from main.models import Productomodel, Usuariomodel
 from main import db
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from main.auth.decorators import role_required
-
-PRODUCTS = {}
 
 class Product(Resource):
     def get(self, product_id):
@@ -15,35 +13,65 @@ class Product(Resource):
         return {'producto': producto.to_json()}, 200
 
     @jwt_required()
-    @role_required(['Administrador', 'Encargado'])
     def put(self, product_id):
-        data = request.get_json()
-        user_id = (request.headers.get('user_id') or request.headers.get('User-Id') or request.headers.get('X-User-Id'))
-        if not user_id:
-            return {'error': 'Falta el ID del usuario autenticado'}, 400
-        auth_user = db.session.get(Usuariomodel, user_id)
-        if not auth_user or auth_user.rol.lower() != 'administrador':
+        """Actualizar producto - Solo Admin y Encargado"""
+        user_id = get_jwt_identity()
+        print(f"Usuario intentando editar: {user_id}")
+        
+        auth_user = db.session.query(Usuariomodel).filter_by(id_usuario=user_id).first()
+        
+        if not auth_user:
+            print("Usuario no encontrado")
+            return {'error': 'Usuario no encontrado'}, 404
+        
+        print(f"Rol del usuario: {auth_user.rol}")
+        
+        # Solo Administrador y Encargado pueden editar productos
+        if auth_user.rol not in ['Administrador', 'Encargado']:
+            print("Rol sin permisos")
             return {'error': 'No tiene permisos para editar productos'}, 403
+        
         producto = db.session.get(Productomodel, product_id)
         if not producto:
             return {'error': 'Producto no encontrado'}, 404
+        
+        data = request.get_json()
+        print(f"Datos recibidos: {data}")
+        
+        # Actualizar campos
         producto.nombre = data.get('nombre', producto.nombre)
         producto.precio = data.get('precio', producto.precio)
         producto.stock = data.get('stock', producto.stock)
         producto.descripcion = data.get('descripcion', producto.descripcion)
-        db.session.commit()
-        return {'mensaje': 'Producto actualizado correctamente', 'producto': producto.to_json()}, 200
+        producto.id_categoria = data.get('id_categoria', producto.id_categoria)
+        
+        try:
+            db.session.commit()
+            print("Producto actualizado exitosamente")
+            return {'mensaje': 'Producto actualizado correctamente', 'producto': producto.to_json()}, 200
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error al actualizar: {str(e)}")
+            return {'error': str(e)}, 500
 
     @jwt_required()
     @role_required(['Administrador'])
     def delete(self, product_id):
-        user_id = (request.headers.get('user_id') or request.headers.get('User-Id') or request.headers.get('X-User-Id'))
+        """Eliminar producto - Solo Admin"""
+        user_id = get_jwt_identity()
         auth_user = db.session.query(Usuariomodel).filter_by(id_usuario=user_id).first()
+        
         if not auth_user or auth_user.rol != 'Administrador':
             return {'error': 'No tiene permisos para eliminar productos'}, 403
+        
         producto = db.session.get(Productomodel, product_id)
         if not producto:
             return {'error': 'Producto no encontrado'}, 404
-        db.session.delete(producto)
-        db.session.commit()
-        return {'mensaje': 'Producto eliminado correctamente'}, 200
+        
+        try:
+            db.session.delete(producto)
+            db.session.commit()
+            return {'mensaje': 'Producto eliminado correctamente'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500

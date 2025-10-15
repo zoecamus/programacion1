@@ -1,61 +1,67 @@
-from flask import request, jsonify
 from flask_restful import Resource
-from main.models import Usuariomodel, Pedidomodel
-from main import db
-from sqlalchemy import desc, func
-from main.models.usuarios import Usuarios
-from flask_jwt_extended import jwt_required
+from flask import request, jsonify
+from .. import db
+from main.models import Usuariomodel
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from main.auth.decorators import role_required
-
-USUARIOS = {}
 
 class Users(Resource):
     @jwt_required()
-    @role_required(['Administrador', 'Encargado'])
     def get(self):
-        page = 1
-        per_page = 10
-        usuarios = db.session.query(Usuariomodel)
-        if request.args.get('page'):
-            page = int(request.args.get('page'))
-        if request.args.get('per_page'):
-            per_page = int(request.args.get('per_page'))
-
-
-        if request.args.get('Pedidos'):
-            usuarios = usuarios.outerjoin(Usuariomodel.usuario_pedido).group_by(Usuariomodel.id_usuario).having(func.count(Pedidomodel.id_pedido) >= int(request.args.get('Pedidos')))
-
-        #Filtro por apellido
-        if request.args.get('apellido'):
-            usuarios = usuarios.filter(Usuariomodel.apellido.like("%"+request.args.get('apellido')+"%"))
-
-        #Filtro por rol
-        if request.args.get('rol'):
-            usuarios = usuarios.filter(Usuariomodel.rol.like("%"+request.args.get('rol')+"%"))
-
-        #Ordeno por apellido
-        if request.args.get('sortby_apellido'):
-            usuarios = usuarios.order_by(desc(Usuariomodel.apellido))
+        """Obtener todos los usuarios - Solo Admin y Encargado"""
+        try:
+            user_id = get_jwt_identity()
+            print(f"Usuario solicitando lista de usuarios: {user_id}")
             
+            auth_user = db.session.query(Usuariomodel).filter_by(id_usuario=user_id).first()
+            
+            if not auth_user:
+                return {'error': 'Usuario no encontrado'}, 404
+            
+            print(f"Rol del usuario: {auth_user.rol}")
+            
+            # Solo Admin y Encargado pueden ver todos los usuarios
+            if auth_user.rol not in ['Administrador', 'Encargado']:
+                return {'error': 'No tiene permisos para ver usuarios'}, 403
+            
+            # Obtener parámetros de paginación (opcionales)
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            
+            usuarios = db.session.query(Usuariomodel).all()
+            
+            # Convertir a JSON
+            usuarios_json = [usuario.to_json() for usuario in usuarios]
+            
+            return {
+                'usuarios': usuarios_json,
+                'total': len(usuarios_json)
+            }, 200
+            
+        except Exception as e:
+            print(f"Error al obtener usuarios: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {'error': str(e)}, 500
 
-        usuarios = usuarios.paginate(page=page, per_page=per_page, error_out=False)
-        return jsonify ({'usuarios': [usuario.to_json() for usuario in usuarios],
-                        'total': usuarios.total,
-                        'pages': usuarios.pages,
-                        'page': usuarios.page})
-    
+    @jwt_required()
+    @role_required(['Administrador'])
     def post(self):
-        pedidos_ids = request.get_json().get('pedidos')
+        """Crear un nuevo usuario - Solo Admin"""
         usuario = Usuariomodel.from_json(request.get_json())
-        data = request.get_json()
-        usuario = Usuarios.from_json(data)
-        usuario.plain_password = data.get("password")  
-
-
-        if pedidos_ids:
-            pedidos = Pedidomodel.query.filter(Pedidomodel.id_pedido.in_(pedidos_ids)).all()
-            usuario.usuario_pedido.extend(pedidos)
-
-        db.session.add(usuario)
-        db.session.commit()
-        return usuario.to_json(), 201
+        
+        # Verificar si ya existe
+        exists = db.session.query(Usuariomodel).filter(
+            Usuariomodel.email == usuario.email
+        ).scalar() is not None
+        
+        if exists:
+            return {'error': 'El email ya está registrado'}, 409
+        
+        try:
+            db.session.add(usuario)
+            db.session.commit()
+            return usuario.to_json(), 201
+        except Exception as error:
+            db.session.rollback()
+            return {'error': str(error)}, 409

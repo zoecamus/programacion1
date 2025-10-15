@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService, UserRole } from '../../services/auth.services';
 import { ProductosService, Producto, Categoria } from '../../services/productos.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-productos',
@@ -35,7 +36,8 @@ export class ProductosComponent implements OnInit {
   constructor(
     public authService: AuthService,
     private productosService: ProductosService,
-    private http: HttpClient
+    private http: HttpClient,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -134,17 +136,15 @@ export class ProductosComponent implements OnInit {
 
   guardarProducto() {
     if (!this.productoEditando) return;
-
-    this.http.put(
+    this.http.put<Producto>(
       `http://localhost:7000/product/${this.productoEditando.id_producto}`,
       this.productoEditando,
       { headers: this.getHeaders() }
     ).subscribe({
-      next: (response: any) => {
-        const index = this.productos.findIndex(p => p.id_producto === this.productoEditando!.id_producto);
-        if (index !== -1) {
-          this.productos[index] = { ...this.productoEditando! };
-        }
+      next: (productoActualizado: Producto) => {
+        this.productos = this.productos.map(p =>
+          p.id_producto === productoActualizado.id_producto ? productoActualizado : p
+        );
         alert('Producto actualizado correctamente');
         this.cerrarModalEditar();
       },
@@ -152,8 +152,8 @@ export class ProductosComponent implements OnInit {
         console.error('Error al actualizar producto:', error);
         alert('Error al actualizar el producto');
       }
-    });
-  }
+    })}
+    
 
   // Carrito
   agregarAlCarrito(producto: Producto) {
@@ -243,7 +243,10 @@ export class ProductosComponent implements OnInit {
       }
     });
   }
-
+  volverDashboard() {
+    const redirectUrl = this.authService.getRedirectUrl();
+    this.router.navigate([redirectUrl]);
+  }
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
     return categoria ? categoria.nombre : 'Sin categoría';
