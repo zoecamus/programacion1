@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserRole } from '../../services/auth.services';
+import { Router } from '@angular/router';
 
 interface Usuario {
   id: string;
@@ -34,7 +35,8 @@ export class UsuariosComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -53,18 +55,19 @@ export class UsuariosComponent implements OnInit {
 
   cargarUsuarios() {
     this.loading = true;
+    this.error = '';
+    
+    console.log('🔵 Cargando usuarios...');
+    
     this.http.get<any>('http://localhost:7000/users', { headers: this.getHeaders() }).subscribe({
       next: (response) => {
-        console.log('Usuarios cargados:', response);
-        this.usuarios = (response.usuarios || response).map((u: any) => ({
-          ...u,
-          estado: u.estado || 'Activo' // Estado por defecto si no existe
-        }));
+        console.log('✅ Usuarios recibidos:', response);
+        this.usuarios = response.usuarios || response;
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error al obtener usuarios:', err);
-        this.error = 'Error al cargar usuarios';
+        console.error('❌ Error al obtener usuarios:', err);
+        this.error = 'Error al cargar usuarios. Verifica los permisos.';
         this.loading = false;
       }
     });
@@ -90,7 +93,6 @@ export class UsuariosComponent implements OnInit {
     
   cambiarEstado(usuario: Usuario, nuevoEstado: 'Activo' | 'Bloqueado' | 'Pendiente') {
     if (confirm(`¿Cambiar estado de ${usuario.nombre} a "${nuevoEstado}"?`)) {
-      // Aquí deberías hacer la petición al backend
       this.http.put(
         `http://localhost:7000/user/${usuario.id}`,
         { estado: nuevoEstado },
@@ -168,10 +170,10 @@ export class UsuariosComponent implements OnInit {
   }
 
   volverDashboard() {
-    window.history.back();
+    const redirectUrl = this.authService.getRedirectUrl();
+    this.router.navigate([redirectUrl]);
   }
 
-  // Verificar permisos
   puedeEditarEstado(): boolean {
     return this.currentUserRole === 'Administrador' || this.currentUserRole === 'Encargado';
   }
