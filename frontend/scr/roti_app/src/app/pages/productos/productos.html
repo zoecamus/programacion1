@@ -1,22 +1,39 @@
-  <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title"><i class="bi bi-basket-fill me-2"></i>Productos</h1>
-        <p class="page-subtitle">Explora nuestro delicioso menú</p>
-      </div>
-      <div style="display: flex; gap: 0.5rem;">
-        <!-- Botón volver al dashboard (solo para Admin y Encargado) -->
-        <button class="btn btn-secondary" (click)="volverDashboard()" *ngIf="currentUserRole !== 'Cliente'">
-          <i class="bi bi-arrow-left me-2"></i>Dashboard
-        </button>
-        
-        <!-- Botón del carrito -->
-        <button class="btn btn-brand position-relative" (click)="mostrarCarrito = true" *ngIf="cantidadItems > 0">
-          <i class="bi bi-cart-fill me-2"></i>Ver carrito
-          <span class="badge-cart">{{ cantidadItems }}</span>
-        </button>
-      </div>
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="bi bi-basket-fill me-2"></i>Productos</h1>
+      <p class="page-subtitle">Explora nuestro delicioso menú</p>
     </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <!-- Mostrar nombre del usuario -->
+      <span class="text-muted me-2" *ngIf="authService.getCurrentUser()">
+        <i class="bi bi-person-circle me-1"></i>
+        {{ authService.getCurrentUser()?.nombre }}
+      </span>
+
+      <!-- Botón Mis Pedidos (solo para Cliente) -->
+      <button class="btn btn-outline-primary" *ngIf="currentUserRole === 'Cliente'" [routerLink]="['/pedidos']">
+        <i class="bi bi-bag-check me-2"></i>Mis Pedidos
+      </button>
+
+      <!-- Botón volver al dashboard (solo para Admin y Encargado) -->
+      <button class="btn btn-secondary" (click)="volverDashboard()" *ngIf="currentUserRole !== 'Cliente'">
+        <i class="bi bi-arrow-left me-2"></i>Dashboard
+      </button>
+      
+      <!-- Botón del carrito -->
+      <button class="btn btn-brand position-relative" (click)="mostrarCarrito = true" *ngIf="cantidadItems > 0">
+        <i class="bi bi-cart-fill me-2"></i>Ver carrito
+        <span class="badge-cart">{{ cantidadItems }}</span>
+      </button>
+
+      <!-- Botón Cerrar Sesión -->
+      <button class="btn btn-outline-danger" (click)="cerrarSesion()">
+        <i class="bi bi-box-arrow-right me-2"></i>Salir
+      </button>
+    </div>
+  </div>
+
   <!-- Filtros -->
   <div class="filtros-section">
     <div class="search-box">
@@ -53,9 +70,11 @@
   <!-- Grid de productos -->
   <div class="productos-grid" *ngIf="!loading && !error">
     <div class="producto-card" *ngFor="let producto of productosFiltrados">
-      <!-- ↑ SIN (click) aquí -->
-      
-      <span class="badge-stock" [class.stock-bajo]="producto.stock < 10" [class.sin-stock]="producto.stock === 0">
+       
+      <span class="badge-stock" 
+            *ngIf="isAdmin()" 
+            [class.stock-bajo]="producto.stock < 10" 
+            [class.sin-stock]="producto.stock === 0">
         Stock: {{ producto.stock }}
       </span>
       
@@ -73,7 +92,6 @@
         <p class="producto-descripcion">{{ producto.descripcion }}</p>
         <div class="producto-footer">
           <span class="producto-precio">${{ producto.precio.toLocaleString('es-AR') }}</span>
-          <!-- SOLO este botón tiene click -->
           <button class="btn btn-brand btn-sm" 
                   (click)="agregarAlCarrito(producto)" 
                   [disabled]="producto.stock === 0"
@@ -83,9 +101,11 @@
         </div>
       </div>
     </div>
-  <div *ngIf="!loading && !error && productosFiltrados.length === 0" class="no-resultados">
-    <i class="bi bi-search"></i>
-    <p>No se encontraron productos</p>
+
+    <div *ngIf="!loading && !error && productosFiltrados.length === 0" class="no-resultados">
+      <i class="bi bi-search"></i>
+      <p>No se encontraron productos</p>
+    </div>
   </div>
 </div>
 

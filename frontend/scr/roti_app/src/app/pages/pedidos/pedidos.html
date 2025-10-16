@@ -1,14 +1,31 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="bi bi-clipboard-check-fill me-2"></i>Pedidos</h1>
-      <p class="page-subtitle">Gestión de pedidos para retiro en el local</p>
+      <!-- Título diferente según el rol -->
+      <h1 class="page-title" *ngIf="esCliente">
+        <i class="bi bi-bag-check-fill me-2"></i>Mis Pedidos
+      </h1>
+      <h1 class="page-title" *ngIf="!esCliente">
+        <i class="bi bi-clipboard-check-fill me-2"></i>Gestión de Pedidos
+      </h1>
+      
+      <p class="page-subtitle" *ngIf="esCliente">
+        Seguí el estado de tus pedidos para retiro en el local
+      </p>
+      <p class="page-subtitle" *ngIf="!esCliente">
+        Gestión de pedidos para retiro en el local
+      </p>
     </div>
+    
+    <!-- Botón volver al menú (solo para clientes) -->
+    <button class="btn btn-outline-primary" *ngIf="esCliente" (click)="volverAlMenu()">
+      <i class="bi bi-arrow-left me-1"></i>Volver al menú
+    </button>
   </div>
 
-  <!-- Filtros -->
+  <!-- Filtros (ocultar búsqueda por cliente para usuarios) -->
   <div class="filtros-section">
-    <div class="search-box">
+    <div class="search-box" *ngIf="!esCliente">
       <div class="input-group">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
         <input type="text" class="form-control" placeholder="Buscar por ID o cliente..." [(ngModel)]="busqueda">
@@ -19,8 +36,8 @@
       <button class="estado-btn" [class.active]="filtroEstado === 'todos'" (click)="filtroEstado = 'todos'">
         Todos
       </button>
-      <button class="estado-btn" [class.active]="filtroEstado === 'Pendiente'" (click)="filtroEstado = 'Pendiente'">
-        Pendientes
+      <button class="estado-btn" [class.active]="filtroEstado === 'Recibido'" (click)="filtroEstado = 'Recibido'">
+        Recibidos
       </button>
       <button class="estado-btn" [class.active]="filtroEstado === 'En preparación'" (click)="filtroEstado = 'En preparación'">
         En preparación
@@ -51,7 +68,9 @@
       <div class="pedido-header">
         <div>
           <h3 class="pedido-numero">Pedido #{{ pedido.id_pedido }}</h3>
-          <p class="pedido-fecha">Cliente: {{ pedido.cliente }}</p>
+          <!-- Solo mostrar cliente si NO es cliente (es admin/encargado) -->
+          <p class="pedido-fecha" *ngIf="!esCliente">Cliente: {{ pedido.cliente }}</p>
+          <p class="pedido-fecha" *ngIf="esCliente">{{ pedido.metodo_pago }} - Retiro en local</p>
         </div>
         <span class="badge" [ngClass]="getEstadoBadgeClass(pedido.estado)">
           <i class="bi bi-{{ getEstadoIcono(pedido.estado) }} me-1"></i>{{ pedido.estado }}
@@ -59,17 +78,32 @@
       </div>
 
       <div class="pedido-body">
-        <div class="info-row">
-          <i class="bi bi-person-fill"></i>
-          <span><strong>Cliente:</strong> {{ pedido.cliente }}</span>
+        <!-- Info para admin/encargado -->
+        <div *ngIf="!esCliente">
+          <div class="info-row">
+            <i class="bi bi-person-fill"></i>
+            <span><strong>Cliente:</strong> {{ pedido.cliente }}</span>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-telephone-fill"></i>
+            <span><strong>Teléfono:</strong> {{ pedido.telefono || 'No especificado' }}</span>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-credit-card"></i>
+            <span><strong>Método de pago:</strong> {{ pedido.metodo_pago }}</span>
+          </div>
         </div>
-        <div class="info-row">
-          <i class="bi bi-telephone-fill"></i>
-          <span><strong>Teléfono:</strong> {{ pedido.telefono || 'No especificado' }}</span>
-        </div>
-        <div class="info-row">
-          <i class="bi bi-credit-card"></i>
-          <span><strong>Método de pago:</strong> {{ pedido.metodo_pago }}</span>
+        
+        <!-- Info para cliente (más simple) -->
+        <div *ngIf="esCliente">
+          <div class="info-row">
+            <i class="bi bi-basket"></i>
+            <span>{{ pedido.items.length }} producto(s)</span>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-shop"></i>
+            <span>Retiro en local</span>
+          </div>
         </div>
       </div>
 
@@ -83,9 +117,14 @@
     </div>
   </div>
 
+  <!-- Mensaje cuando no hay pedidos -->
   <div *ngIf="!loading && !error && pedidos.length === 0" class="no-resultados">
     <i class="bi bi-inbox"></i>
-    <p>No se encontraron pedidos</p>
+    <p *ngIf="esCliente">Todavía no realizaste ningún pedido</p>
+    <p *ngIf="!esCliente">No se encontraron pedidos</p>
+    <button class="btn btn-brand mt-3" *ngIf="esCliente" (click)="volverAlMenu()">
+      <i class="bi bi-shop me-1"></i>Ver menú
+    </button>
   </div>
 </div>
 
@@ -98,7 +137,8 @@
         <button class="btn-close-custom" (click)="cerrarModal()">×</button>
       </div>
       <p style="color: #6b7280; margin: 0.5rem 0 0 0;">
-        Cliente: {{ pedidoDetalle.cliente }}
+        <span *ngIf="!esCliente">Cliente: {{ pedidoDetalle.cliente }}</span>
+        <span *ngIf="esCliente">{{ pedidoDetalle.metodo_pago }}</span>
       </p>
     </div>
 
@@ -107,9 +147,9 @@
       <div class="estado-timeline">
         <div class="timeline-item completed">
           <i class="bi bi-check-circle"></i>
-          <span>Pendiente</span>
+          <span>Recibido</span>
         </div>
-        <div class="timeline-line" [class.completed]="pedidoDetalle.estado !== 'Pendiente'"></div>
+        <div class="timeline-line" [class.completed]="pedidoDetalle.estado !== 'Recibido'"></div>
         
         <div class="timeline-item" [class.completed]="pedidoDetalle.estado === 'En preparación' || pedidoDetalle.estado === 'Listo para retiro' || pedidoDetalle.estado === 'Entregado'">
           <i class="bi bi-hourglass-split"></i>
@@ -129,8 +169,9 @@
         </div>
       </div>
 
-      <div class="estado-acciones" *ngIf="currentUserRole === 'Administrador' || currentUserRole === 'Encargado'">
-        <button class="btn btn-sm btn-warning" *ngIf="pedidoDetalle.estado === 'Pendiente'" 
+      <!-- Acciones de cambio de estado (solo admin/encargado) -->
+      <div class="estado-acciones" *ngIf="puedeGestionar">
+        <button class="btn btn-sm btn-warning" *ngIf="pedidoDetalle.estado === 'Recibido'" 
                 (click)="cambiarEstado(pedidoDetalle, 'En preparación')">
           Iniciar preparación
         </button>
@@ -148,14 +189,14 @@
     <div class="detalle-seccion">
       <h3>Información del pedido</h3>
       <div class="info-grid">
-        <div class="info-item">
+        <div class="info-item" *ngIf="!esCliente">
           <i class="bi bi-person-fill"></i>
           <div>
             <small style="color: #6b7280; display: block;">Cliente</small>
             <strong>{{ pedidoDetalle.cliente }}</strong>
           </div>
         </div>
-        <div class="info-item">
+        <div class="info-item" *ngIf="!esCliente">
           <i class="bi bi-telephone-fill"></i>
           <div>
             <small style="color: #6b7280; display: block;">Teléfono</small>
@@ -167,6 +208,13 @@
           <div>
             <small style="color: #6b7280; display: block;">Método de pago</small>
             <strong>{{ pedidoDetalle.metodo_pago }}</strong>
+          </div>
+        </div>
+        <div class="info-item">
+          <i class="bi bi-shop"></i>
+          <div>
+            <small style="color: #6b7280; display: block;">Tipo de entrega</small>
+            <strong>Retiro en local</strong>
           </div>
         </div>
       </div>
@@ -190,7 +238,7 @@
 
     <div class="detalle-seccion" style="display: flex; justify-content: space-between;">
       <button class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
-      <button class="btn btn-brand" (click)="imprimirTicket(pedidoDetalle)">
+      <button class="btn btn-brand" (click)="imprimirTicket(pedidoDetalle)" *ngIf="puedeGestionar">
         <i class="bi bi-printer me-1"></i> Imprimir ticket
       </button>
     </div>

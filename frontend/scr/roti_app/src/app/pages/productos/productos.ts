@@ -1,15 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService, UserRole } from '../../services/auth.services';
 import { ProductosService, Producto, Categoria } from '../../services/productos.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './productos.html',
   styleUrl: './productos.css'
 })
@@ -47,12 +47,20 @@ export class ProductosComponent implements OnInit {
   }
 
   private getHeaders(): HttpHeaders {
-    const user = localStorage.getItem('currentUser');
-    const token = user ? JSON.parse(user).access_token : '';
+    const token = this.authService.getToken();
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
+  }
+
+  // ✅ FUNCIÓN CERRAR SESIÓN
+  cerrarSesion() {
+    if (confirm('¿Estás seguro de cerrar sesión?')) {
+      this.authService.logout();
+      this.carrito = [];
+      this.router.navigate(['/login']);
+    }
   }
 
   cargarCategorias() {
@@ -116,7 +124,6 @@ export class ProductosComponent implements OnInit {
 
   // Editar producto (solo admin)
   editarProducto(producto: Producto, event?: Event) {
-    // Prevenir que se propague el click
     if (event) {
       event.stopPropagation();
     }
@@ -152,8 +159,8 @@ export class ProductosComponent implements OnInit {
         console.error('Error al actualizar producto:', error);
         alert('Error al actualizar el producto');
       }
-    })}
-    
+    });
+  }
 
   // Carrito
   agregarAlCarrito(producto: Producto) {
@@ -212,41 +219,80 @@ export class ProductosComponent implements OnInit {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       alert('Debes iniciar sesión para realizar un pedido');
+      this.router.navigate(['/login']);
       return;
     }
 
+    // Preparar items del pedido
     const items = this.carrito.map(item => ({
+      id_producto: item.producto.id_producto,
       producto: item.producto.nombre,
       cantidad: item.cantidad,
-      precio: item.producto.precio
+      precio_unitario: item.producto.precio,
+      subtotal: item.producto.precio * item.cantidad
     }));
 
+    // Preparar datos del pedido
     const nuevoPedido = {
-      id_usuario: currentUser.email,
+      id_usuario: currentUser.id || currentUser.email,
+      usuario_email: currentUser.email,
+      usuario_nombre: currentUser.nombre,
       items: items,
       total: this.totalCarrito,
-      estado: 'Pendiente',
-      metodo_pago: 'Efectivo'
+      estado: 'Recibido',
+      metodo_pago: 'Efectivo',
+      tipo_entrega: 'Retiro en local',
+      fecha: new Date().toISOString()
     };
 
-    console.log('Creando pedido:', nuevoPedido);
+    console.log('📦 Creando pedido:', nuevoPedido);
 
-    this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
+    // Obtener token
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers }).subscribe({
       next: (response) => {
-        alert(`¡Pedido realizado con éxito!\n\nTotal: $${this.totalCarrito.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`);
+        console.log('✅ Pedido creado exitosamente:', response);
+        alert(`¡Pedido realizado con éxito! 🎉\n\nTotal: ${this.totalCarrito.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido en el local cuando esté listo.`);
         this.carrito = [];
         this.mostrarCarrito = false;
+        
+        // Redirigir a Mis Pedidos
+        this.router.navigate(['/mis-pedidos']);
       },
       error: (error) => {
-        console.error('Error al crear pedido:', error);
-        alert('Error al crear el pedido. Intenta de nuevo.');
+        console.error('❌ Error completo al crear pedido:', error);
+        console.error('Status:', error.status);
+        console.error('Mensaje:', error.message);
+        console.error('Error del servidor:', error.error);
+        
+        let mensajeError = 'Error al crear el pedido.';
+        
+        if (error.status === 401) {
+          mensajeError = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+          this.router.navigate(['/login']);
+        } else if (error.status === 400) {
+          mensajeError = `Error en los datos: ${error.error?.message || 'Datos inválidos'}`;
+        } else if (error.status === 500) {
+          mensajeError = 'Error en el servidor. Por favor, intenta más tarde.';
+        } else if (error.error?.message) {
+          mensajeError = error.error.message;
+        }
+        
+        alert(mensajeError + '\n\nRevisa la consola (F12) para más detalles.');
       }
     });
   }
+
   volverDashboard() {
     const redirectUrl = this.authService.getRedirectUrl();
     this.router.navigate([redirectUrl]);
   }
+
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
     return categoria ? categoria.nombre : 'Sin categoría';
