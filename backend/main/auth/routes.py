@@ -33,13 +33,15 @@ def login():
             return jsonify({'error': 'Email y contraseña son requeridos'}), 400
         
         usuario = db.session.query(Usuarios).filter(
-            db.func.lower(Usuarios.email) == email.lower()
+            db.func.lower(Usuarios.id_usuario) == email.lower()
         ).first()
         
         if not usuario:
             return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
         
-        if not usuario.validate_pass(password):
+        # Verificar contraseña (asumiendo que está hasheada con bcrypt)
+        from werkzeug.security import check_password_hash
+        if not check_password_hash(usuario.password, password):
             return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
         
         # ← CAMBIO AQUÍ: Pasar solo el ID/email como identity
@@ -47,14 +49,16 @@ def login():
         
         response_data = {
             'id': str(usuario.id_usuario),
-            'email': usuario.email,
+            'email': usuario.id_usuario,
             'nombre': usuario.nombre,
             'rol': usuario.rol,
+            'estado': usuario.estado,  # ← AGREGAR ESTADO
             'access_token': access_token
         }
         
         print("Login exitoso!")
         print("Token generado para:", usuario.id_usuario)
+        print("Rol:", usuario.rol, "Estado:", usuario.estado)  # ← Debug
         print("=" * 50)
         
         return jsonify(response_data), 200
@@ -72,19 +76,44 @@ def register():
     if request.method == 'OPTIONS':
         return '', 200
     
-    data = request.get_json()
-    usuario = Usuarios.from_json(data)
-    usuario.plain_password = data.get("password")
-
-    exists = db.session.query(Usuarios).filter(Usuarios.email == usuario.email).scalar() is not None
-    if exists:
-        return jsonify({'error': 'El email ya está registrado'}), 409
-
+    print("=" * 50)
+    print("PETICIÓN DE REGISTRO RECIBIDA")
+    
     try:
+        data = request.get_json()
+        print("Data recibida:", data)
+        
+        # Crear usuario desde JSON
+        usuario = Usuarios.from_json(data)
+        usuario.plain_password = data.get("password")
+        usuario.estado = 'Pendiente'  # ← AGREGAR ESTADO PENDIENTE
+        
+        print(f"Intentando registrar: {usuario.id_usuario}")
+        print(f"Rol: {usuario.rol}, Estado: {usuario.estado}")
+        
+        # Verificar si ya existe
+        exists = db.session.query(Usuarios).filter(
+            Usuarios.id_usuario == usuario.id_usuario
+        ).scalar() is not None
+        
+        if exists:
+            print(f"❌ Usuario {usuario.id_usuario} ya existe")
+            return jsonify({'error': 'El email ya está registrado'}), 409
+
+        # Guardar en la base de datos
         db.session.add(usuario)
         db.session.commit()
+        
+        print(f"✅ Usuario {usuario.id_usuario} registrado exitosamente")
+        print(f"Estado asignado: {usuario.estado}")
+        print("=" * 50)
+        
         return jsonify(usuario.to_json()), 201
+        
     except Exception as error:
+        print(f"❌ ERROR al registrar: {str(error)}")
+        import traceback
+        traceback.print_exc()
         db.session.rollback()
         return jsonify({'error': str(error)}), 409
 
@@ -135,3 +164,30 @@ def crear_producto():
 def ver_productos():
     productos = Productos.query.all()
     return jsonify([p.to_json() for p in productos]), 200
+
+# ← AGREGAR ENDPOINT PARA OBTENER USUARIO (para espera-confirmacion)
+@auth.route('/user/<string:id_usuario>', methods=['GET'])
+@jwt_required()
+def obtener_usuario(id_usuario):
+    """
+    Obtiene información de un usuario por su ID
+    Usado por la página de espera-confirmacion para verificar el estado
+    """
+    try:
+        usuario = db.session.query(Usuarios).filter(
+            Usuarios.id_usuario == id_usuario
+        ).first()
+        
+        if not usuario:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        return jsonify({
+            'id': usuario.id_usuario,
+            'nombre': usuario.nombre,
+            'rol': usuario.rol,
+            'estado': usuario.estado
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al obtener usuario: {str(e)}")
+        return jsonify({'error': 'Error al obtener usuario'}), 500

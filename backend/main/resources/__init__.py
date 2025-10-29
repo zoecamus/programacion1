@@ -5,7 +5,7 @@ from .valoraciones import Valoraciones as ValoracionesResource
 from .valoracion import Valoracion as ValoracionResource
 from .products import Products as ProductsResource
 from .product import Product as ProductResource
-from .pedidos import Pedidos as PedidosResource
+from .pedidos import PedidosResource as PedidosResource
 from .pedido import Pedido as PedidoResource
 from .login import LogIn as LogInResource
 from .logout import LogOut as LogOutResource
@@ -14,3 +14,6 @@ from .categoria import Categoria as CategoriaResource
 from .facturas import Facturas as FacturasResource
 from .factura import Factura as FacturaResource
 from .notificacion import Notificacion as NotificacionResource
+from .promociones import Promociones as PromocionesResource
+from .promocion import Promocion as PromocionResource
+from .validar_codigo import ValidarCodigo as ValidarCodigoResource

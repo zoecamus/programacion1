@@ -1,203 +1,147 @@
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
-// ✅ Exportar el tipo de roles
-export type UserRole = 'Administrador' | 'Encargado' | 'Cliente';
+export type UserRole = 'Administrador' | 'Cliente' | 'Empleado' | 'Encargado';
 
-// ✅ Interface para el usuario
 export interface User {
-  id: string;
   email: string;
-  nombre: string;
-  apellido?: string;
-  telefono?: string;
-  rol: UserRole;
+  nombre?: string;
+  rol?: UserRole;
+  access_token?: string;
+  id?: string;
+  estado?: string;  // ← AGREGAR
 }
 
-// ✅ Interface para la respuesta del login
-export interface LoginResponse {
-  id: string;
-  email: string;
-  nombre: string;
-  rol: UserRole;
-  access_token: string;
-}
-
-// ✅ Injectable y exportado
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:7000/auth'; // ✅ Cambiar a puerto 7000
+  private readonly STORAGE_KEY = 'currentUser';
+  private readonly API_URL = 'http://localhost:7000/auth/login';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   /**
-   * Realiza el login y guarda los datos en localStorage
+   * Inicia sesión con el backend y guarda el token en localStorage
    */
   login(email: string, password: string): Observable<boolean> {
-    console.log('🔵 AuthService: Enviando login...');
-    
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, password })
-      .pipe(
-        map(response => {
-          console.log('✅ Respuesta del servidor:', response);
+    return this.http.post<any>(this.API_URL, { email, password }).pipe(
+      tap(response => {
+        console.log('📥 Respuesta del backend:', response);
+        if (response && response.access_token) {
+          const userData: User = {
+            email: response.email,
+            id: response.id,
+            access_token: response.access_token,
+            nombre: response.nombre,
+            rol: response.rol || null,
+            estado: response.estado || 'Activo'  // ← AGREGAR
+          };
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(userData));
+          console.log('✅ Usuario guardado en localStorage:', userData);
           
-          // Guarda TODOS los datos en localStorage
-          localStorage.setItem('token', response.access_token);
-          localStorage.setItem('rol', response.rol);
-          localStorage.setItem('email', response.email);
-          localStorage.setItem('nombre', response.nombre);
-          localStorage.setItem('userId', response.id);
-          
-          console.log('💾 Datos guardados en localStorage');
-          console.log('👤 Rol del usuario:', response.rol);
-          
-          return true;
-        }),
-        catchError(error => {
-          console.error('❌ Error en login:', error);
-          return of(false);
-        })
-      );
+          // Redirigir automáticamente según el rol Y el estado
+          const redirectUrl = this.getRedirectUrl();
+          console.log('🚀 Redirigiendo a:', redirectUrl);
+          this.router.navigate([redirectUrl]);
+        }
+      }),
+      tap(() => true), // Devolver true si todo salió bien
+      tap({
+        error: (err) => {
+          console.error('❌ Error en login:', err);
+          return false;
+        }
+      })
+    );
   }
 
   /**
-   * Registra un nuevo usuario
+   * Cierra sesión y redirige al login
    */
-  register(usuario: any): Observable<boolean> {
-    return this.http.post(`${this.apiUrl}/register`, usuario)
-      .pipe(
-        map(() => true),
-        catchError(error => {
-          console.error('Error en registro:', error);
-          return of(false);
-        })
-      );
+  logout() {
+    localStorage.removeItem(this.STORAGE_KEY);
+    this.router.navigate(['/login']);
   }
 
   /**
-   * Determina la URL de redirección según el rol del usuario
+   * Obtiene el usuario actual desde localStorage
+   */
+  getCurrentUser(): User | null {
+    const userData = localStorage.getItem(this.STORAGE_KEY);
+    return userData ? JSON.parse(userData) : null;
+  }
+
+  /**
+   * Devuelve true si hay usuario autenticado
+   */
+  isLoggedIn(): boolean {
+    return this.getCurrentUser() !== null;
+  }
+
+  /**
+   * Devuelve el rol del usuario actual
+   */
+  getUserRole(): UserRole | null {
+    const user = this.getCurrentUser();
+    return user ? user.rol || null : null;
+  }
+
+  getEmail(): string | null {
+    const user = this.getCurrentUser();
+    return user ? user.email : null;
+  }
+  
+
+  /**
+   * Devuelve el token del usuario actual
+   */
+  getToken(): string | null {
+    const user = this.getCurrentUser();
+    return user ? user.access_token || null : null;
+  }
+
+  /**
+   * Redirige al dashboard según el rol Y el estado
    */
   getRedirectUrl(): string {
-    const rol = this.getUserRole();
-    console.log('🎯 Calculando redirección para rol:', rol);
+    const user = this.getCurrentUser();
+    const rol = user?.rol;
+    const estado = user?.estado;
+    
+    console.log('🔍 Rol del usuario:', rol, 'Estado:', estado);
+    
+    // Si el usuario está pendiente de aprobación, redirigir a espera
+    if (estado === 'Pendiente') {
+      return '/espera-confirmacion';
+    }
+    
+    // Si el usuario está bloqueado, cerrar sesión
+    if (estado === 'Bloqueado') {
+      alert('Tu cuenta está bloqueada. Contacta al administrador.');
+      this.logout();
+      return '/login';
+    }
     
     switch (rol) {
       case 'Administrador':
-        return '/dashboard/admin';
+        return '/dashboard';
       case 'Encargado':
-        return '/dashboard/encargado';
+        return '/dashboard';
+      case 'Empleado':
+        return '/dashboard';
       case 'Cliente':
         return '/productos';
       default:
-        console.warn('⚠️ Rol desconocido:', rol);
-        return '/productos';
+        return '/login';
     }
   }
 
-  /**
-   * Verifica si el usuario está autenticado
-   */
-  isLoggedIn(): boolean {
-    const hasToken = !!localStorage.getItem('token');
-    console.log('🔐 isLoggedIn:', hasToken);
-    return hasToken;
+  register(payload: any) {
+    return this.http.post<any>('http://localhost:7000/auth/register', payload);
   }
-
-  /**
-   * Alias de isLoggedIn para compatibilidad
-   */
-  isAuthenticated(): boolean {
-    return this.isLoggedIn();
-  }
-
-  /**
-   * Obtiene el rol del usuario actual
-   */
-  getUserRole(): UserRole | null {
-    const rol = localStorage.getItem('rol') as UserRole | null;
-    console.log('👤 getUserRole:', rol);
-    return rol;
-  }
-
-  /**
-   * Alias de getUserRole
-   */
-  getRole(): UserRole | null {
-    return this.getUserRole();
-  }
-
-  /**
-   * Obtiene el token del usuario actual
-   */
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
-  /**
-   * Obtiene el email del usuario actual
-   */
-  getEmail(): string | null {
-    return localStorage.getItem('email');
-  }
-
-  /**
-   * Obtiene el nombre del usuario actual
-   */
-  getNombre(): string | null {
-    return localStorage.getItem('nombre');
-  }
-
-  /**
-   * Obtiene el ID del usuario actual
-   */
-  getUserId(): string | null {
-    return localStorage.getItem('userId');
-  }
-
-  /**
-   * Cierra la sesión del usuario
-   */
-  logout(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('rol');
-    localStorage.removeItem('email');
-    localStorage.removeItem('nombre');
-    localStorage.removeItem('userId');
-    console.log('👋 Sesión cerrada');
-  }
-
-  /**
-   * Limpia todos los datos de la sesión
-   */
-  clearSession(): void {
-    this.logout();
-  }
-
-  /**
-   * Obtiene toda la información del usuario actual
-   */
-  getCurrentUser(): User | null {
-    const token = this.getToken();
-    
-    if (!token) {
-      console.log('❌ No hay usuario logueado');
-      return null;
-    }
-
-    const user: User = {
-      id: localStorage.getItem('userId') || '',
-      email: localStorage.getItem('email') || '',
-      nombre: localStorage.getItem('nombre') || '',
-      apellido: localStorage.getItem('apellido') || undefined,
-      telefono: localStorage.getItem('telefono') || undefined,
-      rol: localStorage.getItem('rol') as UserRole
-    };
-
-    console.log('👤 getCurrentUser:', user);
-    return user;
-  }
+  
 }

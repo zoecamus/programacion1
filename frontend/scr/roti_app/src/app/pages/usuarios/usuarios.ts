@@ -12,7 +12,7 @@ interface Usuario {
   email: string;
   rol: string;
   telefono: string;
-  estado?: 'Activo' | 'Bloqueado' | 'Pendiente';
+  estado?: string;
 }
 
 @Component({
@@ -23,15 +23,11 @@ interface Usuario {
   imports: [CommonModule, FormsModule]
 })
 export class UsuariosComponent implements OnInit {
-  usuarios: Usuario[] = []; 
+  usuarios: Usuario[] = [];
   busqueda: string = '';
   currentUserRole: UserRole | null = null;
   loading: boolean = true;
   error: string = '';
-
-  // Modal
-  mostrarModal: boolean = false;
-  usuarioEditando: Usuario | null = null;
 
   constructor(
     private http: HttpClient,
@@ -44,141 +40,157 @@ export class UsuariosComponent implements OnInit {
     this.cargarUsuarios();
   }
 
-  private getHeaders(): HttpHeaders {
-    const user = localStorage.getItem('currentUser');
-    const token = user ? JSON.parse(user).access_token : '';
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
+  // ========== PERMISOS ==========
+  
+  // Solo Admin puede cambiar roles
+  esAdmin(): boolean {
+    return this.currentUserRole === 'Administrador';
+  }
+
+  // Admin puede cambiar roles, Encargado NO
+  puedeCambiarRol(): boolean {
+    return this.currentUserRole === 'Administrador';
+  }
+
+  // Admin y Encargado pueden gestionar usuarios (aprobar, bloquear)
+  puedeGestionarUsuarios(): boolean {
+    return this.currentUserRole === 'Administrador' || 
+           this.currentUserRole === 'Encargado';
+  }
+
+  // Admin y Encargado pueden cambiar estado (Activo, Bloqueado, Pendiente)
+  puedeEditarEstado(): boolean {
+    return this.currentUserRole === 'Administrador' || 
+           this.currentUserRole === 'Encargado';
+  }
+
+  // Solo Admin puede eliminar usuarios
+  puedeEliminar(): boolean {
+    return this.currentUserRole === 'Administrador';
   }
 
   cargarUsuarios() {
-    this.loading = true;
-    this.error = '';
+    const token = this.authService.getToken();
     
-    console.log('🔵 Cargando usuarios...');
-    
-    this.http.get<any>('http://localhost:7000/users', { headers: this.getHeaders() }).subscribe({
-      next: (response) => {
-        console.log('✅ Usuarios recibidos:', response);
-        this.usuarios = response.usuarios || response;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener usuarios:', err);
-        this.error = 'Error al cargar usuarios. Verifica los permisos.';
-        this.loading = false;
-      }
-    });
-  }
-    
-  get usuariosFiltrados(): Usuario[] {
-    const termino = this.busqueda.toLowerCase();
-    return this.usuarios.filter(u =>
-      u.nombre.toLowerCase().includes(termino) ||
-      u.email.toLowerCase().includes(termino) ||
-      u.rol.toLowerCase().includes(termino)
-    );
-  }
-   
-  getRolBadgeClass(rol: string): string {
-    switch(rol) {
-      case 'Administrador': return 'text-bg-danger';
-      case 'Encargado': return 'text-bg-info';
-      case 'Cliente': return 'text-bg-primary';
-      default: return 'text-bg-secondary';
-    }
-  }
-    
-  cambiarEstado(usuario: Usuario, nuevoEstado: 'Activo' | 'Bloqueado' | 'Pendiente') {
-    if (confirm(`¿Cambiar estado de ${usuario.nombre} a "${nuevoEstado}"?`)) {
-      this.http.put(
-        `http://localhost:7000/user/${usuario.id}`,
-        { estado: nuevoEstado },
-        { headers: this.getHeaders() }
-      ).subscribe({
-        next: () => {
-          usuario.estado = nuevoEstado;
-          alert(`Estado actualizado a "${nuevoEstado}"`);
-        },
-        error: (err) => {
-          console.error('Error al cambiar estado:', err);
-          alert('Error al cambiar el estado');
-        }
-      });
-    }
-  }
-
-  editarUsuario(id: string) {
-    const usuario = this.usuarios.find(u => u.id === id);
-    if (usuario) {
-      this.usuarioEditando = { ...usuario };
-      this.mostrarModal = true;
-    }
-  }
-
-  eliminarUsuario(id: string) {
-    if (this.currentUserRole !== 'Administrador') {
-      alert('Solo el administrador puede eliminar usuarios');
+    if (!token) {
+      this.error = 'No hay token. Inicia sesión de nuevo.';
+      this.loading = false;
       return;
     }
 
-    if (confirm('¿Estás seguro de eliminar este usuario?')) {
-      this.http.delete(
-        `http://localhost:7000/user/${id}`,
-        { headers: this.getHeaders() }
-      ).subscribe({
-        next: () => {
-          this.usuarios = this.usuarios.filter(u => u.id !== id);
-          alert('Usuario eliminado correctamente');
-        },
-        error: (err) => {
-          console.error('Error al eliminar:', err);
-          alert('Error al eliminar usuario');
-        }
-      });
-    }
-  }
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
 
-  cerrarModal() {
-    this.mostrarModal = false;
-    this.usuarioEditando = null;
-  }
-
-  guardarCambios() {
-    if (!this.usuarioEditando) return;
-
-    this.http.put(
-      `http://localhost:7000/user/${this.usuarioEditando.id}`,
-      this.usuarioEditando,
-      { headers: this.getHeaders() }
-    ).subscribe({
-      next: () => {
-        const index = this.usuarios.findIndex(u => u.id === this.usuarioEditando!.id);
-        if (index !== -1) {
-          this.usuarios[index] = { ...this.usuarioEditando! };
-        }
-        alert('Usuario actualizado correctamente');
-        this.cerrarModal();
+    this.http.get<any>('http://localhost:7000/users', { headers }).subscribe({
+      next: (response) => {
+        this.usuarios = response.usuarios || [];
+        this.loading = false;
       },
       error: (err) => {
-        console.error('Error al actualizar:', err);
-        alert('Error al actualizar usuario');
+        console.error('Error:', err);
+        this.error = 'Error al cargar usuarios';
+        this.loading = false;
       }
     });
   }
 
+  get usuariosFiltrados(): Usuario[] {
+    return this.usuarios.filter(u =>
+      u.nombre.toLowerCase().includes(this.busqueda.toLowerCase()) ||
+      u.email.toLowerCase().includes(this.busqueda.toLowerCase())
+    );
+  }
+
+  getRolBadgeClass(rol: string): string {
+    if (rol === 'Administrador') return 'text-bg-danger';
+    if (rol === 'Encargado') return 'text-bg-info';
+    return 'text-bg-primary';
+  }
+
   volverDashboard() {
-    const redirectUrl = this.authService.getRedirectUrl();
-    this.router.navigate([redirectUrl]);
+    this.router.navigate([this.authService.getRedirectUrl()]);
   }
 
-  puedeEditarEstado(): boolean {
-    return this.currentUserRole === 'Administrador' || this.currentUserRole === 'Encargado';
+  aprobarUsuario(id: string) {
+    if (confirm('¿Aprobar este usuario?')) {
+      this.cambiarEstado(id, 'Activo');
+    }
+  }
+  
+  rechazarUsuario(id: string) {
+    if (confirm('¿Rechazar este usuario?')) {
+      this.cambiarEstado(id, 'Rechazado');
+    }
+  }
+  
+  cambiarEstado(id: string, nuevoEstado: string) {
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  
+    this.http.put(
+      `http://localhost:7000/user/${id}`,
+      { estado: nuevoEstado },
+      { headers }
+    ).subscribe({
+      next: () => {
+        const usuario = this.usuarios.find(u => u.id === id);
+        if (usuario) usuario.estado = nuevoEstado;
+        alert(`Usuario ${nuevoEstado.toLowerCase()}`);
+      },
+      error: () => alert('Error al cambiar estado')
+    });
+  }
+  
+  cambiarRol(id: string, nuevoRol: string) {
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  
+    this.http.put(
+      `http://localhost:7000/user/${id}`,
+      { rol: nuevoRol },
+      { headers }
+    ).subscribe({
+      next: () => {
+        const usuario = this.usuarios.find(u => u.id === id);
+        if (usuario) usuario.rol = nuevoRol;
+        alert(`Rol cambiado a ${nuevoRol}`);
+      },
+      error: () => alert('Error al cambiar rol')
+    });
+  }
+  
+
+  editarUsuario(id: string) {
+    alert('Funcionalidad de editar en desarrollo');
   }
 
-  puedeEliminar(): boolean {
-    return this.currentUserRole === 'Administrador';
+  eliminarUsuario(id: string) {
+    if (!this.puedeEliminar()) {
+      alert('Solo el administrador puede eliminar');
+      return;
+    }
+
+    if (confirm('¿Eliminar este usuario?')) {
+      const token = this.authService.getToken();
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
+
+      this.http.delete(`http://localhost:7000/user/${id}`, { headers }).subscribe({
+        next: () => {
+          this.usuarios = this.usuarios.filter(u => u.id !== id);
+          alert('Usuario eliminado');
+        },
+        error: () => alert('Error al eliminar')
+      });
+    }
   }
 }

@@ -4,8 +4,12 @@
       <h1 class="page-title"><i class="bi bi-megaphone-fill me-2"></i>Promociones</h1>
       <p class="page-subtitle">Gestiona ofertas, descuentos y códigos promocionales</p>
     </div>
-    <button class="btn btn-brand" (click)="nuevaPromocion()" *ngIf="currentUserRole === 'Administrador' || currentUserRole === 'Encargado'">
+
+    <button class="btn btn-brand" (click)="nuevaPromocion()" *ngIf="puedeEditar()">
       <i class="bi bi-plus-circle me-2"></i>Nueva promoción
+    </button>
+    <button class="btn btn-secondary" (click)="volverDashboard()" *ngIf="currentUserRole !== 'Cliente'">
+      <i class="bi bi-arrow-left me-2"></i> RotiInicio
     </button>
   </div>
 
@@ -51,7 +55,7 @@
               {{ promo.activa && !estaVencida(promo.fechaFin) ? 'Activa' : 'Inactiva' }}
             </span>
           </div>
-          <div class="dropdown-custom" *ngIf="currentUserRole === 'Administrador' || currentUserRole === 'Encargado'">
+          <div class="dropdown-custom" *ngIf="puedeEditar()">
             <button class="btn-icon" (click)="toggleDropdown(promo.id!)">
               <i class="bi bi-three-dots-vertical"></i>
             </button>
@@ -72,26 +76,30 @@
           <div class="promo-descuento" *ngIf="promo.descuento > 0">
             <span class="descuento-valor" *ngIf="promo.tipo === 'porcentaje'">{{ promo.descuento }}%</span>
             <span class="descuento-valor" *ngIf="promo.tipo === 'monto'">${{ promo.descuento }}</span>
+            <span class="descuento-valor" *ngIf="promo.tipo === '2x1'">2x1</span>
             <span class="descuento-texto">de descuento</span>
           </div>
 
           <div class="promo-codigo">
             <i class="bi bi-tag-fill me-2"></i>
             <code>{{ promo.codigo }}</code>
+            <button class="btn-copiar" (click)="copiarCodigo(promo.codigo)" title="Copiar código">
+              <i class="bi bi-clipboard"></i>
+            </button>
           </div>
 
           <div class="promo-fechas">
             <div class="fecha-item">
               <i class="bi bi-calendar-check me-1"></i>
-              <small>Desde: {{ promo.fechaInicio | date:'dd/MM/yyyy' }}</small>
+              <small>Desde: {{ promo.fechaInicio }}</small>
             </div>
             <div class="fecha-item" [class.text-danger]="estaVencida(promo.fechaFin)">
               <i class="bi bi-calendar-x me-1"></i>
-              <small>Hasta: {{ promo.fechaFin | date:'dd/MM/yyyy' }}</small>
+              <small>Hasta: {{ promo.fechaFin }}</small>
             </div>
           </div>
 
-          <div class="promo-productos" *ngIf="promo.productos.length > 0">
+          <div class="promo-productos" *ngIf="promo.productos && promo.productos.length > 0">
             <small class="text-muted">Productos incluidos:</small>
             <div class="productos-tags">
               <span class="producto-tag" *ngFor="let prod of promo.productos">{{ prod }}</span>
@@ -162,9 +170,14 @@
       <div class="mb-3">
         <label class="form-label fw-semibold">Estado</label>
         <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" [(ngModel)]="promocionEditando.activa" id="switchActiva">
+          <input class="form-check-input" 
+                 type="checkbox" 
+                 [(ngModel)]="promocionEditando.activa" 
+                 id="switchActiva"
+                 [disabled]="!esAdmin()">
           <label class="form-check-label" for="switchActiva">
             {{ promocionEditando.activa ? 'Activa' : 'Inactiva' }}
+            <span *ngIf="!esAdmin()" class="text-muted ms-2">(Solo Admin puede cambiar)</span>
           </label>
         </div>
       </div>
@@ -172,8 +185,8 @@
     
     <div class="modal-footer-custom">
       <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-      <button class="btn btn-brand" (click)="guardarPromocion()">
-        <i class="bi bi-check-circle me-1"></i>Guardar
+      <button class="btn btn-brand" (click)="guardarPromocion()" [disabled]="guardando">
+        <i class="bi bi-check-circle me-1"></i>{{ guardando ? 'Guardando...' : 'Guardar' }}
       </button>
     </div>
   </div>

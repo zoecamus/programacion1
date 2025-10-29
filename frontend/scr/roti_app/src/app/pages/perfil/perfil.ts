@@ -38,7 +38,7 @@ export class PerfilComponent implements OnInit {
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
     if (this.currentUser) {
-      this.perfil.nombre = this.currentUser.nombre;
+      this.perfil.nombre = this.currentUser.nombre || '';
       this.perfil.email = this.currentUser.email;
       // En producción estos datos vendrían del backend
       this.perfil.telefono = '+54 261 555-1234';
@@ -64,7 +64,7 @@ export class PerfilComponent implements OnInit {
   cancelarEdicion() {
     // Restaurar datos originales
     if (this.currentUser) {
-      this.perfil.nombre = this.currentUser.nombre;
+      this.perfil.nombre = this.currentUser.nombre || '';
       this.perfil.email = this.currentUser.email;
     }
     this.editando = false;

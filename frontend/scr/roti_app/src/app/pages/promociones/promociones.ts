@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, UserRole } from '../../services/auth.services';
+import { Router } from '@angular/router';
 
 interface Promocion {
   id?: number;
@@ -28,11 +29,9 @@ export class PromocionesComponent implements OnInit {
   currentUserRole: UserRole | null = null;
   promociones: Promocion[] = [];
   
-  // Modal
   mostrarModal: boolean = false;
   promocionEditando: Promocion | null = null;
   
-  // Filtros
   busqueda: string = '';
   filtroEstado: 'todas' | 'activas' | 'vencidas' = 'todas';
   
@@ -40,7 +39,8 @@ export class PromocionesComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -48,52 +48,23 @@ export class PromocionesComponent implements OnInit {
     this.cargarPromociones();
   }
 
-  private getHeaders(): HttpHeaders {
-    const user = localStorage.getItem('currentUser');
-    const token = user ? JSON.parse(user).access_token : '';
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    });
+  
+  volverDashboard() {
+  const redirectUrl = this.authService.getRedirectUrl();
+  this.router.navigate([redirectUrl]);
   }
-
+  
+  
   cargarPromociones() {
-    // Por ahora, cargar desde localStorage o datos de ejemplo
-    const promocionesGuardadas = localStorage.getItem('promociones');
-    
-    if (promocionesGuardadas) {
-      this.promociones = JSON.parse(promocionesGuardadas);
-    } else {
-      // Datos de ejemplo iniciales
-      this.promociones = [
-        {
-          id: 1,
-          titulo: '2x1 en Hamburguesas',
-          descripcion: 'Llevá 2 hamburguesas y pagá solo 1',
-          descuento: 50,
-          tipo: 'porcentaje',
-          codigo: 'BURGER2X1',
-          fechaInicio: '2025-01-01',
-          fechaFin: '2025-12-31',
-          activa: true,
-          productos: ['Hamburguesa clásica', 'Hamburguesa especial']
-        },
-        {
-          id: 2,
-          titulo: '20% OFF en Patitas',
-          descripcion: 'Descuento en todas las patitas de pollo',
-          descuento: 20,
-          tipo: 'porcentaje',
-          codigo: 'PATITAS20',
-          fechaInicio: '2025-01-01',
-          fechaFin: '2025-06-30',
-          activa: true,
-          productos: ['Patitas de pollo x12']
-        }
-      ];
-      // Guardar en localStorage
-      localStorage.setItem('promociones', JSON.stringify(this.promociones));
-    }
+    this.http.get<any>('http://localhost:7000/promociones').subscribe({
+      next: (response) => {
+        console.log('Promociones cargadas:', response);
+        this.promociones = response.promociones || [];
+      },
+      error: (err) => {
+        console.error('Error al cargar promociones:', err);
+      }
+    });
   }
 
   estaVencida(fechaFin: string): boolean {
@@ -103,14 +74,12 @@ export class PromocionesComponent implements OnInit {
   get promocionesFiltradas(): Promocion[] {
     let filtradas = this.promociones;
     
-    // Filtro por estado
     if (this.filtroEstado === 'activas') {
       filtradas = filtradas.filter(p => p.activa && !this.estaVencida(p.fechaFin));
     } else if (this.filtroEstado === 'vencidas') {
       filtradas = filtradas.filter(p => this.estaVencida(p.fechaFin) || !p.activa);
     }
     
-    // Filtro por búsqueda
     if (this.busqueda) {
       const termino = this.busqueda.toLowerCase();
       filtradas = filtradas.filter(p =>
@@ -163,36 +132,75 @@ export class PromocionesComponent implements OnInit {
 
   eliminarPromocion(id: number) {
     if (confirm('¿Eliminar esta promoción?')) {
-      this.promociones = this.promociones.filter(p => p.id !== id);
-      // Guardar en localStorage
-      localStorage.setItem('promociones', JSON.stringify(this.promociones));
-      alert('Promoción eliminada');
+      const token = this.authService.getToken();
+      const headers = new HttpHeaders({ 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+
+      this.http.delete(`http://localhost:7000/promocion/${id}`, { headers }).subscribe({
+        next: () => {
+          alert('Promoción eliminada');
+          this.cargarPromociones();
+        },
+        error: (err) => {
+          console.error('Error al eliminar:', err);
+          alert('Error al eliminar promoción');
+        }
+      });
     }
     this.dropdownAbierto = null;
   }
+  guardando: boolean = false;
 
   guardarPromocion() {
-    if (!this.promocionEditando) return;
-    
+    if (!this.promocionEditando || this.guardando) return;  // ← Evita doble submit
+  
+    this.guardando = true;  // ← Deshabilita el botón
+  
+    const token = this.authService.getToken();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  
     if (this.promocionEditando.id) {
       // Editar
-      const index = this.promociones.findIndex(p => p.id === this.promocionEditando!.id);
-      if (index !== -1) {
-        this.promociones[index] = { ...this.promocionEditando };
-      }
-      alert('Promoción actualizada');
+      this.http.put(
+        `http://localhost:7000/promocion/${this.promocionEditando.id}`,
+        this.promocionEditando,
+        { headers }
+      ).subscribe({
+        next: () => {
+          alert('Promoción actualizada');
+          this.cargarPromociones();
+          this.cerrarModal();
+          this.guardando = false;  // ← Rehabilita
+        },
+        error: (err) => {
+          console.error('Error al actualizar:', err);
+          alert('Error al actualizar promoción');
+          this.guardando = false;  // ← Rehabilita
+        }
+      });
     } else {
-      // Nueva
-      this.promocionEditando.id = Math.max(0, ...this.promociones.map(p => p.id || 0)) + 1;
-      this.promociones.push({ ...this.promocionEditando });
-      alert('Promoción creada');
+      // Crear nueva
+      this.http.post('http://localhost:7000/promociones', this.promocionEditando, { headers }).subscribe({
+        next: () => {
+          alert('Promoción creada');
+          this.cargarPromociones();
+          this.cerrarModal();
+          this.guardando = false;  // ← Rehabilita
+        },
+        error: (err) => {
+          console.error('Error al crear:', err);
+          alert('Error al crear promoción');
+          this.guardando = false;  // ← Rehabilita
+        }
+      });
     }
-    
-    // Guardar en localStorage
-    localStorage.setItem('promociones', JSON.stringify(this.promociones));
-    
-    this.cerrarModal();
   }
+
 
   cerrarModal() {
     this.mostrarModal = false;
@@ -221,6 +229,22 @@ export class PromocionesComponent implements OnInit {
       case 'combo': return 'box-seam';
       default: return 'tag';
     }
+  }
+
+  puedeEditar(): boolean {
+    return this.currentUserRole === 'Encargado' || this.currentUserRole === 'Administrador';
+  }
+
+  esAdmin(): boolean {
+    return this.currentUserRole === 'Administrador';
+  }
+
+  copiarCodigo(codigo: string) {
+    navigator.clipboard.writeText(codigo).then(() => {
+      alert(`Código ${codigo} copiado al portapapeles`);
+    }).catch(() => {
+      alert('No se pudo copiar el código');
+    });
   }
 
   enviarPromocion() {

@@ -38,7 +38,7 @@ def add_claims_to_access_token(identity):
         return {
             'rol': usuario.rol,
             'id': str(usuario.id_usuario),
-            'email': usuario.email,
+            'email': usuario.id_usuario,
             'nombre': usuario.nombre
         }
     else:

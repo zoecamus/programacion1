@@ -1,0 +1,139 @@
+<div class="page-container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">
+          <i class="bi bi-star-fill me-2"></i>Valorar Pedidos
+        </h1>
+        <p class="page-subtitle">
+          Ayúdanos a mejorar contándonos tu experiencia
+        </p>
+      </div>
+      <button class="btn btn-outline-primary" (click)="volverAPedidos()">
+        <i class="bi bi-arrow-left me-1"></i>Volver a mis pedidos
+      </button>
+    </div>
+  
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando pedidos...</p>
+    </div>
+  
+    <!-- Error -->
+    <div *ngIf="error" class="alert-error">
+      <i class="bi bi-exclamation-circle"></i> {{ error }}
+    </div>
+  
+    <!-- Lista de pedidos para valorar -->
+    <div class="pedidos-grid" *ngIf="!loading && !error">
+      <div class="pedido-card" *ngFor="let pedido of pedidosParaValorar">
+        <div class="pedido-header">
+          <div>
+            <h3 class="pedido-numero">Pedido #{{ pedido.id_pedido }}</h3>
+            <p class="pedido-fecha">{{ pedido.metodo_pago }}</p>
+          </div>
+          <span class="badge-completado">
+            <i class="bi bi-check-circle-fill me-1"></i>Retirado
+          </span>
+        </div>
+  
+        <div class="pedido-items">
+          <div class="item" *ngFor="let item of pedido.items">
+            <i class="bi bi-circle-fill item-dot"></i>
+            <span>{{ item.producto }} x{{ item.cantidad }}</span>
+          </div>
+        </div>
+  
+        <div class="pedido-footer">
+          <span class="pedido-total">${{ pedido.total.toLocaleString('es-AR') }}</span>
+          <button class="btn-valorar" (click)="abrirModalValoracion(pedido)">
+            <i class="bi bi-star me-1"></i>Valorar
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Mensaje cuando no hay pedidos para valorar -->
+    <div *ngIf="!loading && !error && pedidosParaValorar.length === 0" class="no-pedidos">
+      <i class="bi bi-emoji-smile"></i>
+      <h3>No tienes pedidos pendientes de valorar</h3>
+      <p>Una vez que retires un pedido, podrás valorar tu experiencia aquí</p>
+      <button class="btn btn-brand mt-3" (click)="volverAPedidos()">
+        <i class="bi bi-bag-check me-1"></i>Ver mis pedidos
+      </button>
+    </div>
+  </div>
+  
+  <!-- Modal de valoración -->
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+    <div class="modal-valoracion" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Valorar Pedido #{{ pedidoSeleccionado?.id_pedido }}</h2>
+        <button class="btn-close" (click)="cerrarModal()">×</button>
+      </div>
+  
+      <div class="modal-body">
+        <!-- Productos del pedido -->
+        <div class="pedido-resumen">
+          <h4>Tu pedido:</h4>
+          <div class="item-lista">
+            <div class="item-row" *ngFor="let item of pedidoSeleccionado?.items">
+              {{ item.producto }} x{{ item.cantidad }}
+            </div>
+          </div>
+        </div>
+  
+        <!-- Estrellas de valoración -->
+        <div class="rating-section">
+          <h4>¿Cómo fue tu experiencia?</h4>
+          <div class="stars-container">
+            <button 
+              class="star-btn" 
+              *ngFor="let i of [1,2,3,4,5]"
+              [class.selected]="i <= puntajeSeleccionado"
+              (click)="seleccionarPuntaje(i)"
+              type="button">
+              <i class="bi" [ngClass]="i <= puntajeSeleccionado ? 'bi-star-fill' : 'bi-star'"></i>
+            </button>
+          </div>
+          <p class="rating-label" *ngIf="puntajeSeleccionado > 0">
+            {{ puntajeSeleccionado === 1 ? 'Malo' : 
+               puntajeSeleccionado === 2 ? 'Regular' : 
+               puntajeSeleccionado === 3 ? 'Bueno' : 
+               puntajeSeleccionado === 4 ? 'Muy bueno' : 
+               '¡Excelente!' }}
+          </p>
+        </div>
+  
+        <!-- Mensaje opcional -->
+        <div class="mensaje-section">
+          <label for="mensaje">Cuéntanos más (opcional):</label>
+          <textarea 
+            id="mensaje"
+            class="form-control"
+            rows="4"
+            [(ngModel)]="mensajeValoracion"
+            placeholder="¿Qué te gustó? ¿Qué podríamos mejorar?"
+            maxlength="100"></textarea>
+          <small class="text-muted">{{ mensajeValoracion.length }}/100 caracteres</small>
+        </div>
+      </div>
+  
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="cerrarModal()" [disabled]="enviandoValoracion">
+          Cancelar
+        </button>
+        <button 
+          class="btn btn-brand" 
+          (click)="enviarValoracion()"
+          [disabled]="puntajeSeleccionado === 0 || enviandoValoracion">
+          <span *ngIf="!enviandoValoracion">
+            <i class="bi bi-send me-1"></i>Enviar valoración
+          </span>
+          <span *ngIf="enviandoValoracion">
+            <span class="spinner-small"></span> Enviando...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>

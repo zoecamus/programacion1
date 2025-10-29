@@ -5,7 +5,7 @@
       <p class="page-subtitle">Gestión de usuarios del sistema</p>
     </div>
     <button class="btn btn-brand" (click)="volverDashboard()">
-      <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+      <i class="bi bi-arrow-left me-2"></i>RotiInicio
     </button>
   </div>
 
@@ -47,15 +47,24 @@
             <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
             <td>{{ usuario.email }}</td>
             <td>
-              <span class="badge" [ngClass]="getRolBadgeClass(usuario.rol)">
-                {{ usuario.rol }}
-              </span>
+              <!-- CAMBIAR ROL: Solo Admin -->
+              <select 
+                class="form-select form-select-sm"
+                [value]="usuario.rol"
+                (change)="cambiarRol(usuario.id, $any($event.target).value)"
+                [disabled]="!puedeCambiarRol()"
+                style="width: auto; display: inline-block;">
+                <option value="Administrador">Administrador</option>
+                <option value="Encargado">Encargado</option>
+                <option value="Cliente">Cliente</option>
+              </select>
             </td>
             <td>
+              <!-- CAMBIAR ESTADO: Admin y Encargado -->
               <select 
                 class="form-select form-select-sm" 
                 [value]="usuario.estado" 
-                (change)="cambiarEstado(usuario, $any($event.target).value)"
+                (change)="cambiarEstado(usuario.id, $any($event.target).value)"
                 [disabled]="!puedeEditarEstado()"
                 style="width: auto; display: inline-block;">
                 <option value="Activo">Activo</option>
@@ -65,20 +74,29 @@
             </td>
             <td>{{ usuario.telefono }}</td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-secondary me-1" (click)="editarUsuario(usuario.id)">
-                <i class="bi bi-pencil"></i>
-              </button>
+              <!-- APROBAR/RECHAZAR: Admin y Encargado cuando está Pendiente -->
+              <div *ngIf="puedeGestionarUsuarios() && usuario.estado === 'Pendiente'" style="display: inline-flex; gap: 0.25rem;">
+                <button class="btn btn-sm btn-success" (click)="aprobarUsuario(usuario.id)" title="Aprobar">
+                  <i class="bi bi-check-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="rechazarUsuario(usuario.id)" title="Rechazar">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </div>
+
+              <!-- ELIMINAR: Solo Admin -->
               <button 
+                *ngIf="esAdmin()" 
                 class="btn btn-sm btn-outline-danger" 
                 (click)="eliminarUsuario(usuario.id)"
-                *ngIf="puedeEliminar()">
+                title="Eliminar"
+                style="margin-left: 0.25rem;">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
           </tr>
         </tbody>
       </table>
-
       <div *ngIf="usuariosFiltrados.length === 0" class="no-resultados">
         <i class="bi bi-inbox"></i>
         <p>No se encontraron usuarios</p>

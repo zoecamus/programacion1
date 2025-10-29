@@ -29,6 +29,11 @@
           <h3>Pedidos</h3>
           <p>Ver todos los pedidos</p>
         </div>
+        <div class="card" [routerLink]="['/promociones']">
+          <i class="bi bi-megaphone-fill"></i>
+          <h3>Promociones</h3>
+          <p>Gestionar ofertas y descuentos</p>
+        </div>
       </div>
     </div>
 
@@ -46,6 +51,11 @@
           <h3>Productos</h3>
           <p>Ver y actualizar stock</p>
         </div>
+        <div class="card" [routerLink]="['/usuarios']">
+          <i class="bi bi-people-fill"></i>
+          <h3>Usuarios</h3>
+          <p>Gestionar usuarios del sistema</p>
+        </div>
         <div class="card" [routerLink]="['/promociones']">
           <i class="bi bi-megaphone-fill"></i>
           <h3>Promociones</h3>
@@ -54,9 +64,37 @@
       </div>
     </div>
 
-    <!-- Contenido para Cliente (redirige automáticamente a productos) -->
-    <div *ngIf="isCliente()">
-      <p>Redirigiendo a productos...</p>
+    <!-- Contenido para Empleado -->
+    <div *ngIf="isEmpleado()" class="empleado-section">
+      <h2>Panel de Empleado</h2>
+      <div class="cards">
+        <div class="card" [routerLink]="['/pedidos']">
+          <i class="bi bi-clipboard-check"></i>
+          <h3>Pedidos</h3>
+          <p>Ver pedidos activos</p>
+        </div>
+        <div class="card" [routerLink]="['/productos']">
+          <i class="bi bi-basket-fill"></i>
+          <h3>Productos</h3>
+          <p>Ver catálogo</p>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- CLIENTE -->
+<div *ngIf="isCliente()" class="cliente-dashboard">
+  <header class="cliente-nav">
+    <div class="nav-left">
+      <h2><i class="bi bi-egg-fried me-2"></i>La Roti</h2>
+    </div>
+    <nav class="nav-buttons">
+      <button class="btn-nav" routerLink="/productos"><i class="bi bi-basket"></i> Productos</button>
+      <button class="btn-nav" routerLink="/carrito"><i class="bi bi-cart"></i> Mi carrito</button>
+      <button class="btn-nav" routerLink="/pedidos"><i class="bi bi-clipboard-check"></i> Mis pedidos</button>
+      <button class="btn-nav" routerLink="/promociones"><i class="bi bi-megaphone"></i> Promociones</button>
+      <button class="btn-nav" routerLink="/cuenta"><i class="bi bi-person-circle"></i> Mi cuenta</button>
+      <button class="btn-nav logout" (click)="logout()"><i class="bi bi-box-arrow-right"></i> Salir</button>
+    </nav>
+  </header>
+  <router-outlet></router-outlet>
 </div>

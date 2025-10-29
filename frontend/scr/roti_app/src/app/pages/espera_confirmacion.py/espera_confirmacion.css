@@ -1,0 +1,257 @@
+.espera-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FF6B35 0%, #f4a261 100%);
+  padding: 2rem;
+}
+
+.espera-card {
+  background: white;
+  border-radius: 2rem;
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+/* Loader animado de pizza */
+.loader {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 8px solid #d1914b;
+  box-sizing: border-box;
+  --c: no-repeat radial-gradient(farthest-side, #d64123 94%, #0000);
+  --b: no-repeat radial-gradient(farthest-side, #000 94%, #0000);
+  background: var(--c) 11px 15px, var(--b) 6px 15px, var(--c) 35px 23px,
+    var(--b) 29px 15px, var(--c) 11px 46px, var(--b) 11px 34px, var(--c) 36px 0px,
+    var(--b) 50px 31px, var(--c) 47px 43px, var(--b) 31px 48px, #f6d353;
+  background-size: 15px 15px, 6px 6px;
+  animation: l4 3s infinite;
+  margin: 0 auto 2rem;
+}
+
+@keyframes l4 {
+  0% {
+    -webkit-mask: conic-gradient(#0000 0, #000 0);
+  }
+  16.67% {
+    -webkit-mask: conic-gradient(#0000 60deg, #000 0);
+  }
+  33.33% {
+    -webkit-mask: conic-gradient(#0000 120deg, #000 0);
+  }
+  50% {
+    -webkit-mask: conic-gradient(#0000 180deg, #000 0);
+  }
+  66.67% {
+    -webkit-mask: conic-gradient(#0000 240deg, #000 0);
+  }
+  83.33% {
+    -webkit-mask: conic-gradient(#0000 300deg, #000 0);
+  }
+  100% {
+    -webkit-mask: conic-gradient(#0000 360deg, #000 0);
+  }
+}
+
+.espera-titulo {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #182230;
+  margin: 0 0 1rem 0;
+}
+
+.espera-mensaje {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0 0 2rem 0;
+}
+
+.info-box {
+  background: #f9fafb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 2px solid #e5e7eb;
+}
+
+.info-box i {
+  font-size: 2rem;
+  color: #FF6B35;
+  margin-bottom: 0.5rem;
+}
+
+.info-box p {
+  margin: 0.5rem 0;
+  color: #6b7280;
+}
+
+.info-box strong {
+  color: #182230;
+  font-size: 1.1rem;
+}
+
+/* Pasos */
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #f9fafb;
+  opacity: 0.5;
+  transition: all 0.3s;
+}
+
+.paso.completado {
+  background: #d1fae5;
+  border: 2px solid #10b981;
+  opacity: 1;
+}
+
+.paso.activo {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  opacity: 1;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.paso-numero {
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.paso.completado .paso-numero {
+  background: #10b981;
+  color: white;
+}
+
+.paso.activo .paso-numero {
+  background: #f59e0b;
+  color: white;
+}
+
+.paso-texto h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #182230;
+}
+
+.paso-texto p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Acciones */
+.acciones {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-brand {
+  background: #FF6B35;
+  color: white;
+}
+
+.btn-brand:hover:not(:disabled) {
+  background: #e55a2b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.nota {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #eff6ff;
+  border-radius: 0.75rem;
+  color: #1e40af;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.nota i {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .espera-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .espera-titulo {
+    font-size: 2rem;
+  }
+
+  .acciones {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

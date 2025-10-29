@@ -52,6 +52,7 @@ def create_app():
         from main.models.facturas import Facturas
         from main.models.factura_producto import Factura_Producto
         from main.models.pedido_producto import Pedido_Producto
+        from main.models.promociones import Promociones
         db.create_all() 
 
     import main.resources as resources
@@ -71,11 +72,18 @@ def create_app():
     api.add_resource(resources.NotificacionResource, '/notificacion/<notificacion_id>')
     api.add_resource(resources.CategoriaResource, '/categoria/<categoria_id>')
     api.add_resource(resources.ValoracionResource, '/valoracion/<string:id_usuario>/<int:id_pedido>')
+    api.add_resource(resources.PromocionesResource, "/promociones")           # GET, POST (colección)
+    api.add_resource(resources.PromocionResource,  "/promocion/<int:id_promocion>")  
+    api.add_resource(resources.ValidarCodigoResource, "/validar-codigo")  # POST
     api.init_app(app)   
 
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRE'))
     jwt.init_app(app)
+    
+    from main.auth.decorators import add_claims_to_access_token, user_identity_lookup
+    jwt.additional_claims_loader(add_claims_to_access_token)
+    jwt.user_identity_loader(user_identity_lookup)
 
     from main.auth import routes
     app.register_blueprint(routes.auth)

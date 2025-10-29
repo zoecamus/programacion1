@@ -43,9 +43,40 @@ export class RegisterComponent {
     this.errorMsg = '';
     this.okMsg = '';
 
+    console.log('🔍 Estado del formulario:', this.form.value);
+    console.log('🔍 Formulario válido?', this.form.valid);
+    console.log('🔍 Errores:', this.form.errors);
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.errorMsg = 'Por favor completa todos los campos correctamente';
+      
+      // Mostrar errores específicos
+      const errors: string[] = [];
+      
+      if (this.form.get('nombre')?.invalid) {
+        errors.push('Nombre debe tener al menos 2 caracteres');
+      }
+      if (this.form.get('apellido')?.invalid) {
+        errors.push('Apellido debe tener al menos 2 caracteres');
+      }
+      if (this.form.get('email')?.invalid) {
+        errors.push('Email inválido');
+      }
+      if (this.form.get('telefono')?.invalid) {
+        errors.push('Teléfono requerido');
+      }
+      if (this.form.get('password')?.invalid) {
+        errors.push('Contraseña debe tener al menos 6 caracteres');
+      }
+      if (this.form.get('password2')?.invalid) {
+        errors.push('Debes repetir la contraseña');
+      }
+      if (this.form.errors?.['mismatch']) {
+        errors.push('Las contraseñas no coinciden');
+      }
+      
+      this.errorMsg = errors.join('. ') || 'Por favor completa todos los campos correctamente';
+      console.log('❌ Errores del formulario:', errors);
       return;
     }
 
@@ -63,23 +94,27 @@ export class RegisterComponent {
     };
 
 
-    console.log('Enviando registro:', payload);
+    console.log('✅ Enviando registro:', payload);
 
     this.loading = true;
     this.auth.register(payload).subscribe({
-      next: (ok) => {
+      next: (response) => {
+        console.log('✅ Respuesta del servidor:', response);
         this.loading = false;
-        if (ok) {
-          this.okMsg = '¡Cuenta creada correctamente! Redirigiendo al login...';
-          setTimeout(() => this.router.navigate(['/login']), 2000);
-        } else {
-          this.errorMsg = 'No se pudo crear la cuenta. Revisa los datos.';
-        }
+        this.okMsg = '¡Cuenta creada correctamente! Redirigiendo al login...';
+        setTimeout(() => this.router.navigate(['/login']), 2000);
       },
       error: (err) => {
         this.loading = false;
-        console.error('Error en registro:', err);
-        this.errorMsg = 'Error de conexión. Intenta nuevamente.';
+        console.error('❌ Error en registro:', err);
+        
+        if (err.status === 409) {
+          this.errorMsg = 'Este email ya está registrado';
+        } else if (err.error?.error) {
+          this.errorMsg = err.error.error;
+        } else {
+          this.errorMsg = 'Error de conexión. Intenta nuevamente.';
+        }
       }
     });
   }

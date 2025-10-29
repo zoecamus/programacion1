@@ -1,0 +1,67 @@
+<div class="espera-container">
+    <div class="espera-card">
+      <!-- Loader animado -->
+      <div class="loader"></div>
+      
+      <h1 class="espera-titulo">¡Casi listo!</h1>
+      
+      <p class="espera-mensaje">
+        Tu cuenta está siendo revisada por nuestro equipo.
+      </p>
+      
+      <div class="info-box">
+        <i class="bi bi-clock-history"></i>
+        <p>Estamos verificando tu solicitud de registro.</p>
+        <p><strong>{{ usuarioEmail }}</strong></p>
+      </div>
+  
+      <div class="pasos">
+        <div class="paso completado">
+          <div class="paso-numero">
+            <i class="bi bi-check-lg"></i>
+          </div>
+          <div class="paso-texto">
+            <h3>Registro completado</h3>
+            <p>Tu información fue enviada</p>
+          </div>
+        </div>
+  
+        <div class="paso activo">
+          <div class="paso-numero">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div class="paso-texto">
+            <h3>En revisión</h3>
+            <p>Un encargado está verificando tu cuenta</p>
+          </div>
+        </div>
+  
+        <div class="paso">
+          <div class="paso-numero">3</div>
+          <div class="paso-texto">
+            <h3>Aprobación</h3>
+            <p>Podrás acceder al menú y realizar pedidos</p>
+          </div>
+        </div>
+      </div>
+  
+      <div class="acciones">
+        <button class="btn btn-brand" (click)="verificarAhora()" [disabled]="verificandoEstado">
+          <i class="bi bi-arrow-clockwise me-2"></i>
+          {{ verificandoEstado ? 'Verificando...' : 'Verificar ahora' }}
+        </button>
+        
+        <button class="btn btn-secondary" (click)="cerrarSesion()">
+          <i class="bi bi-box-arrow-right me-2"></i>
+          Cerrar sesión
+        </button>
+      </div>
+  
+      <div class="nota">
+        <i class="bi bi-info-circle me-2"></i>
+        <small>
+          Tu cuenta será aprobada en minutos. Esta página se actualiza automáticamente cada 10 segundos.
+        </small>
+      </div>
+    </div>
+  </div>

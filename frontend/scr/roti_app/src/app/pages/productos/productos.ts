@@ -5,11 +5,11 @@ import { AuthService, UserRole } from '../../services/auth.services';
 import { ProductosService, Producto, Categoria } from '../../services/productos.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
-
+import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-productos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './productos.html',
   styleUrl: './productos.css'
 })
@@ -19,6 +19,13 @@ export class ProductosComponent implements OnInit {
   // Carrito
   carrito: { producto: Producto, cantidad: number }[] = [];
   mostrarCarrito: boolean = false;
+  
+  // Código promocional
+  codigoPromo: string = '';
+  promoAplicada: any = null;
+  descuentoPromo: number = 0;
+  validandoCodigo: boolean = false;
+  mensajePromo: string = '';
   
   // Modal editar producto
   mostrarModalEditar: boolean = false;
@@ -44,6 +51,10 @@ export class ProductosComponent implements OnInit {
     this.currentUserRole = this.authService.getUserRole();
     this.cargarCategorias();
     this.cargarProductos();
+  }
+
+  get esCliente(): boolean {
+    return this.currentUserRole === 'Cliente';
   }
 
   private getHeaders(): HttpHeaders {
@@ -114,6 +125,23 @@ export class ProductosComponent implements OnInit {
     return this.currentUserRole === 'Administrador';
   }
 
+  // Abrir modal para crear producto (solo admin)
+  abrirModalCrear() {
+    if (!this.isAdmin()) {
+      alert('Solo el administrador puede crear productos');
+      return;
+    }
+    this.productoEditando = {
+      id_producto: 0,
+      nombre: '',
+      descripcion: '',
+      precio: 0,
+      stock: 0,
+      id_categoria: this.categorias[0]?.id_categoria || 1
+    };
+    this.mostrarModalEditar = true;
+  }
+
   // Editar producto (solo admin)
   editarProducto(producto: Producto, event?: Event) {
     // Prevenir que se propague el click
@@ -136,23 +164,47 @@ export class ProductosComponent implements OnInit {
 
   guardarProducto() {
     if (!this.productoEditando) return;
-    this.http.put<Producto>(
-      `http://localhost:7000/product/${this.productoEditando.id_producto}`,
-      this.productoEditando,
-      { headers: this.getHeaders() }
-    ).subscribe({
-      next: (productoActualizado: Producto) => {
-        this.productos = this.productos.map(p =>
-          p.id_producto === productoActualizado.id_producto ? productoActualizado : p
-        );
-        alert('Producto actualizado correctamente');
-        this.cerrarModalEditar();
-      },
-      error: (error) => {
-        console.error('Error al actualizar producto:', error);
-        alert('Error al actualizar el producto');
-      }
-    })}
+    
+    // Si tiene id_producto > 0, es edición
+    if (this.productoEditando.id_producto > 0) {
+      // EDITAR
+      this.http.put<Producto>(
+        `http://localhost:7000/product/${this.productoEditando.id_producto}`,
+        this.productoEditando,
+        { headers: this.getHeaders() }
+      ).subscribe({
+        next: (productoActualizado: Producto) => {
+          this.productos = this.productos.map(p =>
+            p.id_producto === productoActualizado.id_producto ? productoActualizado : p
+          );
+          alert('Producto actualizado correctamente');
+          this.cerrarModalEditar();
+          this.cargarProductos();
+        },
+        error: (error) => {
+          console.error('Error al actualizar producto:', error);
+          alert('Error al actualizar el producto');
+        }
+      });
+    } else {
+      // CREAR
+      this.http.post<Producto>(
+        'http://localhost:7000/products',
+        this.productoEditando,
+        { headers: this.getHeaders() }
+      ).subscribe({
+        next: (nuevoProducto: Producto) => {
+          alert('Producto creado correctamente');
+          this.cerrarModalEditar();
+          this.cargarProductos();
+        },
+        error: (error) => {
+          console.error('Error al crear producto:', error);
+          alert('Error al crear el producto');
+        }
+      });
+    }
+  }
     
 
   // Carrito
@@ -199,8 +251,59 @@ export class ProductosComponent implements OnInit {
     return this.carrito.reduce((total, item) => total + (item.producto.precio * item.cantidad), 0);
   }
 
+  get totalConDescuento(): number {
+    return this.totalCarrito - this.descuentoPromo;
+  }
+
   get cantidadItems(): number {
     return this.carrito.reduce((total, item) => total + item.cantidad, 0);
+  }
+
+  validarCodigo() {
+    if (!this.codigoPromo.trim()) {
+      this.mensajePromo = 'Ingresa un código';
+      return;
+    }
+
+    this.validandoCodigo = true;
+    this.mensajePromo = '';
+
+    const productos = this.carrito.map(item => ({
+      nombre: item.producto.nombre,
+      cantidad: item.cantidad,
+      precio: item.producto.precio
+    }));
+
+    this.http.post('http://localhost:7000/validar-codigo', {
+      codigo: this.codigoPromo.toUpperCase(),
+      productos: productos,
+      total: this.totalCarrito
+    }).subscribe({
+      next: (response: any) => {
+        if (response.valido) {
+          this.promoAplicada = response.promocion;
+          this.descuentoPromo = response.descuento;
+          this.mensajePromo = `✓ ${response.mensaje}`;
+          console.log('✅ Código válido:', response);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error al validar código:', error);
+        this.mensajePromo = error.error?.mensaje || 'Código no válido';
+        this.promoAplicada = null;
+        this.descuentoPromo = 0;
+      },
+      complete: () => {
+        this.validandoCodigo = false;
+      }
+    });
+  }
+
+  quitarPromo() {
+    this.codigoPromo = '';
+    this.promoAplicada = null;
+    this.descuentoPromo = 0;
+    this.mensajePromo = '';
   }
 
   finalizarCompra() {
@@ -216,25 +319,41 @@ export class ProductosComponent implements OnInit {
     }
 
     const items = this.carrito.map(item => ({
+      id_producto: item.producto.id_producto,
       producto: item.producto.nombre,
       cantidad: item.cantidad,
       precio: item.producto.precio
     }));
 
-    const nuevoPedido = {
+    const nuevoPedido: any = {
       id_usuario: currentUser.email,
       items: items,
-      total: this.totalCarrito,
-      estado: 'Pendiente',
+      total: this.totalConDescuento,
+      estado: 'Recibido',
       metodo_pago: 'Efectivo'
     };
+
+    // Agregar código promocional si hay uno aplicado
+    if (this.promoAplicada) {
+      nuevoPedido.codigo_promocional = this.promoAplicada.codigo;
+      nuevoPedido.descuento = this.descuentoPromo;
+    }
 
     console.log('Creando pedido:', nuevoPedido);
 
     this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
       next: (response) => {
-        alert(`¡Pedido realizado con éxito!\n\nTotal: $${this.totalCarrito.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`);
+        let mensaje = `¡Pedido realizado con éxito!\n\nSubtotal: $${this.totalCarrito.toLocaleString('es-AR')}`;
+        
+        if (this.descuentoPromo > 0) {
+          mensaje += `\nDescuento (${this.promoAplicada.codigo}): -$${this.descuentoPromo.toLocaleString('es-AR')}`;
+        }
+        
+        mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`;
+        
+        alert(mensaje);
         this.carrito = [];
+        this.quitarPromo();
         this.mostrarCarrito = false;
       },
       error: (error) => {
@@ -250,5 +369,37 @@ export class ProductosComponent implements OnInit {
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
     return categoria ? categoria.nombre : 'Sin categoría';
+  }
+
+  getImagenProducto(nombreProducto: string): string {
+    const imagenesMap: { [key: string]: string } = {
+      'Hamburguesa': 'assets/productos/rotiBurger.png',
+      'Patitas de pollo': 'assets/productos/RotiPatitas.png',
+      'Patitas de pollo x12': 'assets/productos/RotiPatitas.png',
+      'Papas fritas': 'assets/productos/RotiPapitasFritas.png',
+      'Ensalada': 'assets/productos/RotiEnsalada.png',
+      'Chocotorta': 'assets/productos/Rotichoco.png',
+      'Cheesecake': 'assets/productos/Roticheese.png'
+    };
+
+    // Buscar coincidencia exacta primero
+    if (imagenesMap[nombreProducto]) {
+      return imagenesMap[nombreProducto];
+    }
+
+    // Buscar coincidencia parcial (case insensitive)
+    const nombreLower = nombreProducto.toLowerCase();
+    for (const [key, value] of Object.entries(imagenesMap)) {
+      if (nombreLower.includes(key.toLowerCase()) || key.toLowerCase().includes(nombreLower)) {
+        return value;
+      }
+    }
+
+    // Imagen por defecto si no encuentra coincidencia
+    return 'assets/logo/producto-default.png';
+  }
+
+  irAMiCuenta() {
+    this.router.navigate(['/mi-cuenta']);
   }
 }

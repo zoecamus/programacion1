@@ -1,0 +1,213 @@
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">
+          <i class="bi bi-person-circle me-2"></i>Mi Cuenta
+        </h1>
+        <p class="page-subtitle">Administra tu información personal y valoraciones</p>
+      </div>
+      <button class="btn btn-outline-primary" (click)="volver()">
+        <i class="bi bi-arrow-left me-1"></i>Volver
+      </button>
+    </div>
+  
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando tu información...</p>
+    </div>
+  
+    <!-- Error -->
+    <div *ngIf="error" class="alert-error">
+      <i class="bi bi-exclamation-circle"></i> {{ error }}
+    </div>
+  
+    <!-- Contenido Principal -->
+    <div *ngIf="!loading && !error" class="content-wrapper">
+      
+      <!-- Tarjeta de Perfil Superior -->
+      <div class="profile-banner">
+        <div class="profile-avatar-large">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        <div class="profile-info-large">
+          <h2 class="profile-name-large">{{ usuario?.nombre }} {{ usuario?.apellido }}</h2>
+          <p class="profile-email">{{ usuario?.email }}</p>
+          <span class="profile-badge">Cliente</span>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-item">
+            <i class="bi bi-star-fill"></i>
+            <div>
+              <strong>{{ valoraciones.length }}</strong>
+              <span>Valoraciones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Pestañas -->
+      <div class="tabs-container">
+        <button 
+          class="tab-btn" 
+          [class.active]="pestanaActiva === 'datos'"
+          (click)="cambiarPestana('datos')">
+          <i class="bi bi-person-lines-fill me-2"></i>Datos Personales
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="pestanaActiva === 'valoraciones'"
+          (click)="cambiarPestana('valoraciones')">
+          <i class="bi bi-chat-quote-fill me-2"></i>Mis Valoraciones
+        </button>
+      </div>
+  
+      <!-- Contenido de Pestañas -->
+      <div class="tab-content">
+        
+        <!-- PESTAÑA: Datos Personales -->
+        <div *ngIf="pestanaActiva === 'datos'" class="datos-section">
+          <div class="section-header">
+            <h3>Información Personal</h3>
+            <button 
+              *ngIf="!modoEdicion" 
+              class="btn btn-primary"
+              (click)="activarEdicion()">
+              <i class="bi bi-pencil-fill me-1"></i>Editar
+            </button>
+          </div>
+  
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <i class="bi bi-person-fill"></i>
+                Nombre
+              </label>
+              <input 
+                type="text" 
+                class="form-control"
+                [(ngModel)]="usuarioEditado!.nombre"
+                [disabled]="!modoEdicion"
+                placeholder="Tu nombre">
+            </div>
+  
+            <div class="form-group">
+              <label>
+                <i class="bi bi-person-fill"></i>
+                Apellido
+              </label>
+              <input 
+                type="text" 
+                class="form-control"
+                [(ngModel)]="usuarioEditado!.apellido"
+                [disabled]="!modoEdicion"
+                placeholder="Tu apellido">
+            </div>
+  
+            <div class="form-group">
+              <label>
+                <i class="bi bi-envelope-fill"></i>
+                Email
+              </label>
+              <input 
+                type="email" 
+                class="form-control"
+                [value]="usuario!.email"
+                disabled
+                title="El email no se puede modificar">
+            </div>
+  
+            <div class="form-group">
+              <label>
+                <i class="bi bi-telephone-fill"></i>
+                Teléfono
+              </label>
+              <input 
+                type="tel" 
+                class="form-control"
+                [(ngModel)]="usuarioEditado!.telefono"
+                [disabled]="!modoEdicion"
+                placeholder="Tu teléfono">
+            </div>
+          </div>
+  
+          <!-- Botones de acción (modo edición) -->
+          <div class="form-actions" *ngIf="modoEdicion">
+            <button 
+              class="btn btn-secondary"
+              (click)="cancelarEdicion()"
+              [disabled]="guardando">
+              <i class="bi bi-x-circle me-1"></i>Cancelar
+            </button>
+            <button 
+              class="btn btn-success"
+              (click)="guardarCambios()"
+              [disabled]="guardando">
+              <span *ngIf="!guardando">
+                <i class="bi bi-check-circle me-1"></i>Guardar Cambios
+              </span>
+              <span *ngIf="guardando">
+                <span class="spinner-small"></span> Guardando...
+              </span>
+            </button>
+          </div>
+        </div>
+  
+        <!-- PESTAÑA: Valoraciones -->
+        <div *ngIf="pestanaActiva === 'valoraciones'" class="valoraciones-section">
+          <div class="section-header">
+            <h3>Mis Valoraciones Realizadas</h3>
+            <button class="btn btn-warning" (click)="irAValorar()">
+              <i class="bi bi-star-fill me-1"></i>Valorar más
+            </button>
+          </div>
+  
+          <!-- Lista de valoraciones -->
+          <div class="valoraciones-lista" *ngIf="valoraciones.length > 0">
+            <div class="valoracion-card" *ngFor="let val of valoraciones">
+              <div class="valoracion-header">
+                <div>
+                  <h4 class="pedido-numero">Pedido #{{ val.id_pedido }}</h4>
+                  <div class="productos-lista" *ngIf="val.productos && val.productos.length > 0">
+                    <span class="producto-item" *ngFor="let producto of val.productos">
+                      <i class="bi bi-circle-fill"></i>{{ producto }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="rating-display">
+                  <div class="stars">
+                    <i class="bi bi-star-fill star-filled" *ngFor="let star of getEstrellas(val.puntaje)"></i>
+                    <i class="bi bi-star star-empty" *ngFor="let star of getEstrellasVacias(val.puntaje)"></i>
+                  </div>
+                  <span class="rating-number">{{ val.puntaje }}/5</span>
+                </div>
+              </div>
+  
+              <div class="valoracion-mensaje" *ngIf="val.mensaje && val.mensaje !== 'Sin comentarios'">
+                <i class="bi bi-quote"></i>
+                <p>{{ val.mensaje }}</p>
+              </div>
+  
+              <div class="valoracion-footer">
+                <span class="fecha-badge">
+                  <i class="bi bi-check-circle-fill me-1"></i>Valorado
+                </span>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Mensaje cuando no hay valoraciones -->
+          <div class="no-valoraciones" *ngIf="valoraciones.length === 0">
+            <i class="bi bi-star"></i>
+            <h4>Aún no has realizado valoraciones</h4>
+            <p>Cuando retires tus pedidos, podrás contarnos tu experiencia</p>
+            <button class="btn btn-brand mt-3" (click)="irAValorar()">
+              <i class="bi bi-star-fill me-1"></i>Valorar pedidos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,92 +1,150 @@
 .dashboard {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  }
-  
-  header {
-    background: linear-gradient(135deg, #FF6B35 0%, #f4a261 100%);
-    color: white;
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  
-  header h1 {
-    margin: 0;
-    font-size: 1.8rem;
-  }
-  
-  .user-info {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-  
-  .btn-logout {
-    background: white;
-    color: #FF6B35;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s;
-  }
-  
-  .btn-logout:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  
-  .content {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
-  .content h2 {
-    color: #182230;
-    margin-bottom: 2rem;
-  }
-  
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .card {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: all 0.3s;
-    text-align: center;
-  }
-  
-  .card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
-  }
-  
-  .card i {
-    font-size: 3rem;
-    color: #FF6B35;
-    margin-bottom: 1rem;
-  }
-  
-  .card h3 {
-    color: #182230;
-    margin: 1rem 0 0.5rem 0;
-  }
-  
-  .card p {
-    color: #6b7280;
-    margin: 0;
-  }
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+header {
+  background: linear-gradient(135deg, #FF6B35 0%, #f4a261 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.user-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.btn-logout {
+  background: white;
+  color: #FF6B35;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+}
+
+.btn-logout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.content h2 {
+  color: #182230;
+  margin-bottom: 2rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+}
+
+.card i {
+  font-size: 3rem;
+  color: #FF6B35;
+  margin-bottom: 1rem;
+}
+
+.card h3 {
+  color: #182230;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.card p {
+  color: #6b7280;
+  margin: 0;
+}
+/* ===== CLIENTE DASHBOARD ===== */
+.cliente-dashboard {
+display: flex;
+flex-direction: column;
+min-height: 100vh;
+background: #f8f9fa;
+}
+
+.cliente-nav {
+background: linear-gradient(135deg, #FF6B35 0%, #f4a261 100%);
+color: white;
+padding: 1rem 2rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+}
+
+.nav-left h2 {
+margin: 0;
+font-weight: 700;
+}
+
+.nav-buttons {
+display: flex;
+gap: 0.75rem;
+flex-wrap: wrap;
+justify-content: center;
+}
+
+.btn-nav {
+background: white;
+color: #FF6B35;
+border: none;
+border-radius: 0.5rem;
+padding: 0.6rem 1rem;
+font-weight: 600;
+display: flex;
+align-items: center;
+gap: 0.4rem;
+cursor: pointer;
+transition: 0.3s ease;
+}
+
+.btn-nav:hover {
+background: #ffe0d1;
+transform: scale(1.05);
+}
+
+.btn-nav.logout {
+background: #d32f2f;
+color: white;
+}
+
+
+.card-icon.usuarios {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}

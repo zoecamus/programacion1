@@ -1,12 +1,30 @@
 @import '../login/login.css';
 
 .alert-ok {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-    padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-  }
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.is-invalid {
+  border-color: #dc3545 !important;
+  background: #fee !important;
+}
+
+.text-danger {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Botón siempre habilitado para debug */
+.btn-login:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -7,3 +7,4 @@ from .categorias import Categorias as Categoriamodel
 from .facturas import Facturas as Facturamodel
 from .factura_producto import Factura_Producto as Factura_Productomodel
 from .pedido_producto import Pedido_Producto as Pedido_Productomodel
+from .promociones import Promociones as Promocionesmodel
