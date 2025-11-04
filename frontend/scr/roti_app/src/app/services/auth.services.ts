@@ -12,7 +12,7 @@ export interface User {
   rol?: UserRole;
   access_token?: string;
   id?: string;
-  estado?: string;  // ← AGREGAR
+  estado?: string;
 }
 
 @Injectable({
@@ -25,21 +25,42 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   /**
+   * Decodifica el payload de un JWT (sin verificar firma)
+   */
+  private decodeToken(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = atob(payload);
+      return JSON.parse(decoded);
+    } catch (e) {
+      console.error('Error al decodificar token:', e);
+      return null;
+    }
+  }
+
+  /**
    * Inicia sesión con el backend y guarda el token en localStorage
    */
   login(email: string, password: string): Observable<boolean> {
     return this.http.post<any>(this.API_URL, { email, password }).pipe(
       tap(response => {
-        console.log('📥 Respuesta del backend:', response);
+        console.log('🔵 Respuesta del backend:', response);
+        
         if (response && response.access_token) {
+          // ✅ Decodificar el token para obtener rol, nombre, estado
+          const tokenData = this.decodeToken(response.access_token);
+          
+          console.log('🔓 Token decodificado:', tokenData);
+          
           const userData: User = {
             email: response.email,
-            id: response.id,
+            id: response.email,
             access_token: response.access_token,
-            nombre: response.nombre,
-            rol: response.rol || null,
-            estado: response.estado || 'Activo'  // ← AGREGAR
+            nombre: tokenData?.nombre,
+            rol: tokenData?.rol || null,
+            estado: tokenData?.estado || 'Activo'
           };
+          
           localStorage.setItem(this.STORAGE_KEY, JSON.stringify(userData));
           console.log('✅ Usuario guardado en localStorage:', userData);
           
@@ -49,7 +70,7 @@ export class AuthService {
           this.router.navigate([redirectUrl]);
         }
       }),
-      tap(() => true), // Devolver true si todo salió bien
+      tap(() => true),
       tap({
         error: (err) => {
           console.error('❌ Error en login:', err);
@@ -95,7 +116,6 @@ export class AuthService {
     return user ? user.email : null;
   }
   
-
   /**
    * Devuelve el token del usuario actual
    */
@@ -144,4 +164,11 @@ export class AuthService {
     return this.http.post<any>('http://localhost:7000/auth/register', payload);
   }
   
+  /**
+   * Obtiene info del usuario desde el backend usando el token
+   * Útil para refrescar datos sin hacer login
+   */
+  getMe(): Observable<User> {
+    return this.http.get<User>('http://localhost:7000/auth/me');
+  }
 }

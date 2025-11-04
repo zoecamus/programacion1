@@ -1,11 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserRole } from '../../services/auth.services';
 import { ProductosService, Producto, Categoria } from '../../services/productos.service';
+import { CarritoService } from '../../services/carrito.services';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+
 @Component({
   selector: 'app-productos',
   standalone: true,
@@ -13,11 +16,12 @@ import { RouterModule } from '@angular/router';
   templateUrl: './productos.html',
   styleUrl: './productos.css'
 })
-export class ProductosComponent implements OnInit {
+export class ProductosComponent implements OnInit, OnDestroy {
   currentUserRole: UserRole | null = null;
   
-  // Carrito
+  // Carrito - ahora desde el servicio
   carrito: { producto: Producto, cantidad: number }[] = [];
+  private carritoSubscription?: Subscription;
   mostrarCarrito: boolean = false;
   
   // Código promocional
@@ -43,6 +47,7 @@ export class ProductosComponent implements OnInit {
   constructor(
     public authService: AuthService,
     private productosService: ProductosService,
+    private carritoService: CarritoService,  // ← INYECTAR SERVICIO
     private http: HttpClient,
     private router: Router
   ) {}
@@ -51,6 +56,21 @@ export class ProductosComponent implements OnInit {
     this.currentUserRole = this.authService.getUserRole();
     this.cargarCategorias();
     this.cargarProductos();
+    
+    // ✅ Suscribirse a cambios del carrito
+    this.carritoSubscription = this.carritoService.getCarrito$().subscribe(
+      carrito => {
+        this.carrito = carrito;
+        console.log('🛒 Carrito actualizado:', carrito);
+      }
+    );
+  }
+
+  ngOnDestroy() {
+    // ✅ Cancelar suscripción al destruir el componente
+    if (this.carritoSubscription) {
+      this.carritoSubscription.unsubscribe();
+    }
   }
 
   get esCliente(): boolean {
@@ -97,18 +117,15 @@ export class ProductosComponent implements OnInit {
   get productosFiltrados(): Producto[] {
     let filtrados = this.productos;
     
-    // Si no es admin, solo mostrar productos con stock
     if (this.currentUserRole !== 'Administrador') {
       filtrados = filtrados.filter(p => p.stock > 0);
     }
     
-    // Filtrar por categoría
     if (this.categoriaSeleccionada !== 'todas') {
       const categoriaId = parseInt(this.categoriaSeleccionada);
       filtrados = filtrados.filter(p => p.id_categoria === categoriaId);
     }
     
-    // Filtrar por búsqueda
     if (this.busqueda) {
       const termino = this.busqueda.toLowerCase();
       filtrados = filtrados.filter(p => 
@@ -120,12 +137,10 @@ export class ProductosComponent implements OnInit {
     return filtrados;
   }
 
-  // Verificar si es admin
   isAdmin(): boolean {
     return this.currentUserRole === 'Administrador';
   }
 
-  // Abrir modal para crear producto (solo admin)
   abrirModalCrear() {
     if (!this.isAdmin()) {
       alert('Solo el administrador puede crear productos');
@@ -142,9 +157,7 @@ export class ProductosComponent implements OnInit {
     this.mostrarModalEditar = true;
   }
 
-  // Editar producto (solo admin)
   editarProducto(producto: Producto, event?: Event) {
-    // Prevenir que se propague el click
     if (event) {
       event.stopPropagation();
     }
@@ -165,9 +178,7 @@ export class ProductosComponent implements OnInit {
   guardarProducto() {
     if (!this.productoEditando) return;
     
-    // Si tiene id_producto > 0, es edición
     if (this.productoEditando.id_producto > 0) {
-      // EDITAR
       this.http.put<Producto>(
         `http://localhost:7000/product/${this.productoEditando.id_producto}`,
         this.productoEditando,
@@ -187,7 +198,6 @@ export class ProductosComponent implements OnInit {
         }
       });
     } else {
-      // CREAR
       this.http.post<Producto>(
         'http://localhost:7000/products',
         this.productoEditando,
@@ -206,49 +216,34 @@ export class ProductosComponent implements OnInit {
     }
   }
     
-
-  // Carrito
+  // ✅ CARRITO - Ahora usa el servicio
   agregarAlCarrito(producto: Producto) {
-    if (producto.stock === 0) {
-      alert('Producto sin stock');
-      return;
-    }
-
-    const item = this.carrito.find(i => i.producto.id_producto === producto.id_producto);
-    if (item) {
-      if (item.cantidad < producto.stock) {
-        item.cantidad++;
-        alert(`${producto.nombre} agregado al carrito`);
-      } else {
-        alert(`No hay más stock disponible de ${producto.nombre}`);
-      }
-    } else {
-      this.carrito.push({ producto, cantidad: 1 });
+    const agregado = this.carritoService.agregarProducto(producto);
+    
+    if (agregado) {
       alert(`${producto.nombre} agregado al carrito`);
+    } else {
+      alert(`No hay más stock disponible de ${producto.nombre}`);
     }
   }
 
   quitarDelCarrito(productoId: number) {
-    this.carrito = this.carrito.filter(i => i.producto.id_producto !== productoId);
+    this.carritoService.quitarProducto(productoId);
   }
 
   cambiarCantidad(productoId: number, cambio: number) {
-    const item = this.carrito.find(i => i.producto.id_producto === productoId);
-    if (item) {
-      const nuevaCantidad = item.cantidad + cambio;
-      
-      if (nuevaCantidad <= 0) {
-        this.quitarDelCarrito(productoId);
-      } else if (nuevaCantidad <= item.producto.stock) {
-        item.cantidad = nuevaCantidad;
-      } else {
+    const exito = this.carritoService.cambiarCantidad(productoId, cambio);
+    
+    if (!exito && cambio > 0) {
+      const item = this.carrito.find(i => i.producto.id_producto === productoId);
+      if (item) {
         alert(`No hay más stock disponible de ${item.producto.nombre}`);
       }
     }
   }
 
   get totalCarrito(): number {
-    return this.carrito.reduce((total, item) => total + (item.producto.precio * item.cantidad), 0);
+    return this.carritoService.getTotal();
   }
 
   get totalConDescuento(): number {
@@ -256,7 +251,7 @@ export class ProductosComponent implements OnInit {
   }
 
   get cantidadItems(): number {
-    return this.carrito.reduce((total, item) => total + item.cantidad, 0);
+    return this.carritoService.getCantidadTotal();
   }
 
   validarCodigo() {
@@ -284,11 +279,9 @@ export class ProductosComponent implements OnInit {
           this.promoAplicada = response.promocion;
           this.descuentoPromo = response.descuento;
           this.mensajePromo = `✓ ${response.mensaje}`;
-          console.log('✅ Código válido:', response);
         }
       },
       error: (error) => {
-        console.error('❌ Error al validar código:', error);
         this.mensajePromo = error.error?.mensaje || 'Código no válido';
         this.promoAplicada = null;
         this.descuentoPromo = 0;
@@ -333,13 +326,10 @@ export class ProductosComponent implements OnInit {
       metodo_pago: 'Efectivo'
     };
 
-    // Agregar código promocional si hay uno aplicado
     if (this.promoAplicada) {
       nuevoPedido.codigo_promocional = this.promoAplicada.codigo;
       nuevoPedido.descuento = this.descuentoPromo;
     }
-
-    console.log('Creando pedido:', nuevoPedido);
 
     this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
       next: (response) => {
@@ -352,7 +342,9 @@ export class ProductosComponent implements OnInit {
         mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`;
         
         alert(mensaje);
-        this.carrito = [];
+        
+        // ✅ Vaciar carrito usando el servicio
+        this.carritoService.vaciarCarrito();
         this.quitarPromo();
         this.mostrarCarrito = false;
       },
@@ -362,10 +354,12 @@ export class ProductosComponent implements OnInit {
       }
     });
   }
+
   volverDashboard() {
     const redirectUrl = this.authService.getRedirectUrl();
     this.router.navigate([redirectUrl]);
   }
+
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
     return categoria ? categoria.nombre : 'Sin categoría';
@@ -382,12 +376,10 @@ export class ProductosComponent implements OnInit {
       'Cheesecake': 'assets/productos/Roticheese.png'
     };
 
-    // Buscar coincidencia exacta primero
     if (imagenesMap[nombreProducto]) {
       return imagenesMap[nombreProducto];
     }
 
-    // Buscar coincidencia parcial (case insensitive)
     const nombreLower = nombreProducto.toLowerCase();
     for (const [key, value] of Object.entries(imagenesMap)) {
       if (nombreLower.includes(key.toLowerCase()) || key.toLowerCase().includes(nombreLower)) {
@@ -395,7 +387,6 @@ export class ProductosComponent implements OnInit {
       }
     }
 
-    // Imagen por defecto si no encuentra coincidencia
     return 'assets/logo/producto-default.png';
   }
 

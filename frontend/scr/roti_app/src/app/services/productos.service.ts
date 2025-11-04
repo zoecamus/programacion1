@@ -35,7 +35,6 @@ export class ProductosService {
   }
 
   getProductos(params?: any): Observable<any> {
-    // Si hay parámetros de filtro, los agregamos a la URL
     let url = this.apiUrl;
     if (params) {
       const queryParams = new URLSearchParams(params).toString();

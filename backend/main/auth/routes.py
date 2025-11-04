@@ -21,7 +21,8 @@ def login():
     
     try:
         data = request.get_json()
-        print("Data recibida:", data)
+        # ❌ NO mostrar la contraseña en logs
+        print(f"Email recibido: {data.get('email')}")
         
         if not data:
             return jsonify({'error': 'No se recibieron datos'}), 400
@@ -39,32 +40,39 @@ def login():
         if not usuario:
             return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
         
-        # Verificar contraseña (asumiendo que está hasheada con bcrypt)
+        # Verificar contraseña
         from werkzeug.security import check_password_hash
         if not check_password_hash(usuario.password, password):
             return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
         
-        # ← CAMBIO AQUÍ: Pasar solo el ID/email como identity
-        access_token = create_access_token(identity=usuario.id_usuario)
-        
-        response_data = {
-            'id': str(usuario.id_usuario),
-            'email': usuario.id_usuario,
-            'nombre': usuario.nombre,
-            'rol': usuario.rol,
-            'estado': usuario.estado,  # ← AGREGAR ESTADO
-            'access_token': access_token
+        # ✅ Crear token con claims adicionales (rol, email, nombre)
+        additional_claims = {
+            "rol": usuario.rol,
+            "email": usuario.id_usuario,
+            "nombre": usuario.nombre,
+            "estado": usuario.estado
         }
         
-        print("Login exitoso!")
-        print("Token generado para:", usuario.id_usuario)
-        print("Rol:", usuario.rol, "Estado:", usuario.estado)  # ← Debug
+        access_token = create_access_token(
+            identity=usuario.id_usuario,
+            additional_claims=additional_claims
+        )
+        
+        # ✅ SOLO devolver token y email (mínima info)
+        response_data = {
+            'access_token': access_token,
+            'email': usuario.id_usuario
+        }
+        
+        print("✅ Login exitoso!")
+        print(f"Token generado para: {usuario.id_usuario}")
+        print(f"Rol: {usuario.rol} | Estado: {usuario.estado}")
         print("=" * 50)
         
         return jsonify(response_data), 200
         
     except Exception as e:
-        print(f"EXCEPCIÓN EN LOGIN: {str(e)}")
+        print(f"❌ EXCEPCIÓN EN LOGIN: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'Error interno del servidor'}), 500
@@ -81,12 +89,13 @@ def register():
     
     try:
         data = request.get_json()
-        print("Data recibida:", data)
+        # ❌ NO mostrar la contraseña en logs
+        print(f"Email a registrar: {data.get('email')}")
         
         # Crear usuario desde JSON
         usuario = Usuarios.from_json(data)
         usuario.plain_password = data.get("password")
-        usuario.estado = 'Pendiente'  # ← AGREGAR ESTADO PENDIENTE
+        usuario.estado = 'Pendiente'
         
         print(f"Intentando registrar: {usuario.id_usuario}")
         print(f"Rol: {usuario.rol}, Estado: {usuario.estado}")
@@ -165,13 +174,34 @@ def ver_productos():
     productos = Productos.query.all()
     return jsonify([p.to_json() for p in productos]), 200
 
-# ← AGREGAR ENDPOINT PARA OBTENER USUARIO (para espera-confirmacion)
+
+# ← AGREGAR ENDPOINT PARA OBTENER INFO DEL TOKEN
+@auth.route('/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    """
+    Obtiene la información del usuario actual desde el token JWT
+    """
+    from flask_jwt_extended import get_jwt
+    
+    claims = get_jwt()
+    user_id = get_jwt_identity()
+    
+    return jsonify({
+        'email': user_id,
+        'rol': claims.get('rol'),
+        'nombre': claims.get('nombre'),
+        'estado': claims.get('estado')
+    }), 200
+
+
+# ← ENDPOINT PARA VERIFICAR ESTADO (espera-confirmacion)
 @auth.route('/user/<string:id_usuario>', methods=['GET'])
 @jwt_required()
 def obtener_usuario(id_usuario):
     """
     Obtiene información de un usuario por su ID
-    Usado por la página de espera-confirmacion para verificar el estado
+    Usado por espera-confirmacion para verificar el estado
     """
     try:
         usuario = db.session.query(Usuarios).filter(
