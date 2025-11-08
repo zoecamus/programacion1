@@ -19,15 +19,20 @@
       <button class="btn btn-info" *ngIf="currentUserRole === 'Cliente'" (click)="irAMiCuenta()">
         <i class="bi bi-person-circle me-2"></i>Mi Cuenta
       </button>
-      
+
       <button class="btn btn-outline-primary" *ngIf="currentUserRole === 'Cliente'" [routerLink]="['/pedidos']">
         <i class="bi bi-bag-check me-2"></i>Mis Pedidos
       </button>
-      
+
       <button class="btn btn-outline-warning" *ngIf="currentUserRole === 'Cliente'" routerLink="/promociones">
         <i class="bi bi-megaphone-fill me-2"></i>Ver Promociones
       </button>
-      
+
+      <!-- ✅ AGREGAR ESTE BOTÓN AQUÍ -->
+      <button class="btn btn-outline-danger" (click)="cerrarSesion()">
+        <i class="bi bi-box-arrow-right me-2"></i>Salir
+      </button>
+
       <!-- Botón del carrito -->
       <button class="btn btn-brand position-relative" (click)="mostrarCarrito = true" *ngIf="cantidadItems > 0">
         <i class="bi bi-cart-fill me-2"></i>Ver carrito
@@ -35,6 +40,8 @@
       </button>
     </div>
   </div>
+
+
 <!-- Filtros -->
 <div class="filtros-section">
   <div class="search-box">

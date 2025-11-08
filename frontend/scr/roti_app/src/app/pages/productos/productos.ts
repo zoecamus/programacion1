@@ -24,7 +24,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
   private carritoSubscription?: Subscription;
   mostrarCarrito: boolean = false;
   
-  // Código promocional
+  // CÃ³digo promocional
   codigoPromo: string = '';
   promoAplicada: any = null;
   descuentoPromo: number = 0;
@@ -47,7 +47,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
   constructor(
     public authService: AuthService,
     private productosService: ProductosService,
-    private carritoService: CarritoService,  // ← INYECTAR SERVICIO
+    private carritoService: CarritoService,  // â† INYECTAR SERVICIO
     private http: HttpClient,
     private router: Router
   ) {}
@@ -57,17 +57,17 @@ export class ProductosComponent implements OnInit, OnDestroy {
     this.cargarCategorias();
     this.cargarProductos();
     
-    // ✅ Suscribirse a cambios del carrito
+    // âœ… Suscribirse a cambios del carrito
     this.carritoSubscription = this.carritoService.getCarrito$().subscribe(
       carrito => {
         this.carrito = carrito;
-        console.log('🛒 Carrito actualizado:', carrito);
+        console.log('ðŸ›’ Carrito actualizado:', carrito);
       }
     );
   }
 
   ngOnDestroy() {
-    // ✅ Cancelar suscripción al destruir el componente
+    // âœ… Cancelar suscripciÃ³n al destruir el componente
     if (this.carritoSubscription) {
       this.carritoSubscription.unsubscribe();
     }
@@ -89,11 +89,11 @@ export class ProductosComponent implements OnInit, OnDestroy {
   cargarCategorias() {
     this.productosService.getCategorias().subscribe({
       next: (data) => {
-        console.log('Categorías cargadas:', data);
+        console.log('CategorÃ­as cargadas:', data);
         this.categorias = data;
       },
       error: (error) => {
-        console.error('Error al cargar categorías:', error);
+        console.error('Error al cargar categorÃ­as:', error);
       }
     });
   }
@@ -216,14 +216,14 @@ export class ProductosComponent implements OnInit, OnDestroy {
     }
   }
     
-  // ✅ CARRITO - Ahora usa el servicio
+  // âœ… CARRITO - Ahora usa el servicio
   agregarAlCarrito(producto: Producto) {
     const agregado = this.carritoService.agregarProducto(producto);
     
     if (agregado) {
       alert(`${producto.nombre} agregado al carrito`);
     } else {
-      alert(`No hay más stock disponible de ${producto.nombre}`);
+      alert(`No hay mÃ¡s stock disponible de ${producto.nombre}`);
     }
   }
 
@@ -237,7 +237,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
     if (!exito && cambio > 0) {
       const item = this.carrito.find(i => i.producto.id_producto === productoId);
       if (item) {
-        alert(`No hay más stock disponible de ${item.producto.nombre}`);
+        alert(`No hay mÃ¡s stock disponible de ${item.producto.nombre}`);
       }
     }
   }
@@ -256,7 +256,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   validarCodigo() {
     if (!this.codigoPromo.trim()) {
-      this.mensajePromo = 'Ingresa un código';
+      this.mensajePromo = 'Ingresa un cÃ³digo';
       return;
     }
 
@@ -278,11 +278,11 @@ export class ProductosComponent implements OnInit, OnDestroy {
         if (response.valido) {
           this.promoAplicada = response.promocion;
           this.descuentoPromo = response.descuento;
-          this.mensajePromo = `✓ ${response.mensaje}`;
+          this.mensajePromo = `âœ“ ${response.mensaje}`;
         }
       },
       error: (error) => {
-        this.mensajePromo = error.error?.mensaje || 'Código no válido';
+        this.mensajePromo = error.error?.mensaje || 'CÃ³digo no vÃ¡lido';
         this.promoAplicada = null;
         this.descuentoPromo = 0;
       },
@@ -301,13 +301,13 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   finalizarCompra() {
     if (this.carrito.length === 0) {
-      alert('El carrito está vacío');
+      alert('El carrito estÃ¡ vacÃ­o');
       return;
     }
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      alert('Debes iniciar sesión para realizar un pedido');
+      alert('Debes iniciar sesiÃ³n para realizar un pedido');
       return;
     }
 
@@ -333,17 +333,17 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
     this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
       next: (response) => {
-        let mensaje = `¡Pedido realizado con éxito!\n\nSubtotal: $${this.totalCarrito.toLocaleString('es-AR')}`;
+        let mensaje = `Â¡Pedido realizado con Ã©xito!\n\nSubtotal: $${this.totalCarrito.toLocaleString('es-AR')}`;
         
         if (this.descuentoPromo > 0) {
           mensaje += `\nDescuento (${this.promoAplicada.codigo}): -$${this.descuentoPromo.toLocaleString('es-AR')}`;
         }
         
-        mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`;
+        mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando estÃ© listo.`;
         
         alert(mensaje);
         
-        // ✅ Vaciar carrito usando el servicio
+        // âœ… Vaciar carrito usando el servicio
         this.carritoService.vaciarCarrito();
         this.quitarPromo();
         this.mostrarCarrito = false;
@@ -362,7 +362,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
-    return categoria ? categoria.nombre : 'Sin categoría';
+    return categoria ? categoria.nombre : 'Sin categorÃ­a';
   }
 
   getImagenProducto(nombreProducto: string): string {
@@ -393,4 +393,14 @@ export class ProductosComponent implements OnInit, OnDestroy {
   irAMiCuenta() {
     this.router.navigate(['/mi-cuenta']);
   }
+
+  /**
+ * Cerrar sesión
+ */
+  cerrarSesion() {
+    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+      this.authService.logout();
+    }
+  }
+
 }

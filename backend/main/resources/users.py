@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt, verify_jwt_in_request
 
 class Users(Resource):
     def get(self):
-        """Obtener todos los usuarios - Solo Admin y Encargado"""
+        """Obtener usuarios con filtros y paginación - Solo Admin y Encargado"""
         print("=" * 50)
         print("PETICIÓN GET /users")
         
@@ -17,7 +17,7 @@ class Users(Resource):
             
             print(f"Claims del token: {claims}")
             
-            user_email = claims.get('sub')  # 'sub' es el subject (identity)
+            user_email = claims.get('sub')
             print(f"Email del usuario: {user_email}")
             
             auth_user = db.session.query(Usuariomodel).filter_by(id_usuario=user_email).first()
@@ -33,13 +33,62 @@ class Users(Resource):
                 print("Usuario sin permisos")
                 return {'error': 'No tiene permisos para ver usuarios'}, 403
             
-            usuarios = db.session.query(Usuariomodel).all()
+            # ✅ PARÁMETROS DE QUERY
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            busqueda = request.args.get('busqueda', '', type=str)
+            rol_filter = request.args.get('rol', '', type=str)
+            estado_filter = request.args.get('estado', '', type=str)
+            
+            print(f"Parámetros: page={page}, per_page={per_page}, busqueda='{busqueda}', rol='{rol_filter}', estado='{estado_filter}'")
+            
+            # ✅ QUERY BASE
+            query = db.session.query(Usuariomodel)
+            
+            # ✅ FILTRO DE BÚSQUEDA (nombre, apellido, email)
+            if busqueda:
+                search_pattern = f"%{busqueda}%"
+                query = query.filter(
+                    db.or_(
+                        Usuariomodel.nombre.ilike(search_pattern),
+                        Usuariomodel.apellido.ilike(search_pattern),
+                        Usuariomodel.email.ilike(search_pattern)
+                    )
+                )
+            
+            # ✅ FILTRO POR ROL
+            if rol_filter:
+                query = query.filter(Usuariomodel.rol == rol_filter)
+            
+            # ✅ FILTRO POR ESTADO
+            if estado_filter:
+                query = query.filter(Usuariomodel.estado == estado_filter)
+            
+            # ✅ CONTAR TOTAL (antes de paginar)
+            total = query.count()
+            
+            # ✅ PAGINACIÓN
+            usuarios = query.offset((page - 1) * per_page).limit(per_page).all()
             usuarios_json = [usuario.to_json() for usuario in usuarios]
             
-            print(f"Usuarios encontrados: {len(usuarios_json)}")
+            # ✅ CALCULAR METADATA DE PAGINACIÓN
+            total_pages = (total + per_page - 1) // per_page  # Redondeo hacia arriba
+            
+            print(f"Usuarios encontrados: {len(usuarios_json)} de {total} total")
+            print(f"Página {page} de {total_pages}")
             print("=" * 50)
             
-            return {'usuarios': usuarios_json, 'total': len(usuarios_json)}, 200
+            return {
+                'usuarios': usuarios_json,
+                'pagination': {
+                    'total': total,
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': total_pages,
+                    'has_next': page < total_pages,
+                    'has_prev': page > 1
+                }
+            }, 200
             
         except Exception as e:
             print(f"EXCEPCIÓN: {str(e)}")

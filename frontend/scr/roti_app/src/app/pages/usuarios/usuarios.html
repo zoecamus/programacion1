@@ -5,29 +5,64 @@
       <p class="page-subtitle">Gestión de usuarios del sistema</p>
     </div>
     <button class="btn btn-brand" (click)="volverDashboard()">
-      <i class="bi bi-arrow-left me-2"></i>RotiInicio
+      <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
     </button>
   </div>
 
   <!-- Loading -->
   <div *ngIf="loading" style="text-align: center; padding: 3rem;">
-    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+    <div class="spinner"></div>
     <p>Cargando usuarios...</p>
   </div>
 
   <!-- Error -->
-  <div *ngIf="error" style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+  <div *ngIf="error" class="alert-error">
     <i class="bi bi-exclamation-circle"></i> {{ error }}
   </div>
 
   <div class="card" *ngIf="!loading && !error">
+    
+    <!-- ✅ FILTROS -->
     <div class="card-header">
-      <div class="input-group" style="max-width: 400px;">
-        <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input type="text" class="form-control" placeholder="Buscar usuario..." [(ngModel)]="busqueda">
+      <div class="filtros-container">
+        <!-- Búsqueda -->
+        <div class="input-group" style="flex: 1; max-width: 400px;">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Buscar por nombre, apellido o email..." 
+            [(ngModel)]="busqueda"
+            (keyup.enter)="aplicarFiltros()">
+        </div>
+
+        <!-- Filtro Rol -->
+        <select class="form-select" [(ngModel)]="rolFiltro" (change)="aplicarFiltros()" style="width: 180px;">
+          <option value="">Todos los roles</option>
+          <option value="Administrador">Administrador</option>
+          <option value="Encargado">Encargado</option>
+          <option value="Cliente">Cliente</option>
+        </select>
+
+        <!-- Filtro Estado -->
+        <select class="form-select" [(ngModel)]="estadoFiltro" (change)="aplicarFiltros()" style="width: 180px;">
+          <option value="">Todos los estados</option>
+          <option value="Activo">Activo</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Bloqueado">Bloqueado</option>
+        </select>
+
+        <!-- Botones -->
+        <button class="btn btn-outline-secondary" (click)="limpiarFiltros()">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+        <button class="btn btn-primary" (click)="aplicarFiltros()">
+          <i class="bi bi-funnel"></i> Filtrar
+        </button>
       </div>
     </div>
 
+    <!-- ✅ TABLA -->
     <div class="table-responsive">
       <table class="table table-hover">
         <thead>
@@ -42,7 +77,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let usuario of usuariosFiltrados">
+          <tr *ngFor="let usuario of usuarios">
             <td>{{ usuario.id }}</td>
             <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
             <td>{{ usuario.email }}</td>
@@ -97,17 +132,71 @@
           </tr>
         </tbody>
       </table>
-      <div *ngIf="usuariosFiltrados.length === 0" class="no-resultados">
+      
+      <!-- Sin resultados -->
+      <div *ngIf="usuarios.length === 0" class="no-resultados">
         <i class="bi bi-inbox"></i>
         <p>No se encontraron usuarios</p>
       </div>
     </div>
+
+    <!-- ✅ PAGINACIÓN -->
+    <div class="pagination-container" *ngIf="pagination.total_pages > 1">
+      <div class="pagination-info">
+        Mostrando {{ (pagination.page - 1) * pagination.per_page + 1 }} 
+        a {{ Math.min(pagination.page * pagination.per_page, pagination.total) }} 
+        de {{ pagination.total }} usuarios
+      </div>
+
+      <div class="pagination-controls">
+        <!-- Items por página -->
+        <select class="form-select form-select-sm" [(ngModel)]="pagination.per_page" (change)="cambiarPerPage(pagination.per_page)" style="width: auto;">
+          <option [value]="5">5 por página</option>
+          <option [value]="10">10 por página</option>
+          <option [value]="20">20 por página</option>
+          <option [value]="50">50 por página</option>
+        </select>
+
+        <!-- Botones de paginación -->
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-sm btn-outline-secondary" 
+            (click)="cambiarPagina(1)"
+            [disabled]="!pagination.has_prev">
+            <i class="bi bi-chevron-double-left"></i>
+          </button>
+          
+          <button 
+            class="btn btn-sm btn-outline-secondary" 
+            (click)="cambiarPagina(pagination.page - 1)"
+            [disabled]="!pagination.has_prev">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+
+          <button 
+            *ngFor="let p of paginas"
+            class="btn btn-sm"
+            [class.btn-primary]="p === pagination.page"
+            [class.btn-outline-secondary]="p !== pagination.page"
+            (click)="cambiarPagina(p)">
+            {{ p }}
+          </button>
+
+          <button 
+            class="btn btn-sm btn-outline-secondary" 
+            (click)="cambiarPagina(pagination.page + 1)"
+            [disabled]="!pagination.has_next">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+
+          <button 
+            class="btn btn-sm btn-outline-secondary" 
+            (click)="cambiarPagina(pagination.total_pages)"
+            [disabled]="!pagination.has_next">
+            <i class="bi bi-chevron-double-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-
-<style>
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-</style>

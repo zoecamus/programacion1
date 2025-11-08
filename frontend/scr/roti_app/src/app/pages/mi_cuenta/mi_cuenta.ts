@@ -176,7 +176,7 @@ export class MiCuentaComponent implements OnInit {
     };
 
     this.http.put(
-      `http://localhost:7000/user/${this.usuario!.id_usuario}`,
+      `http://localhost:4200/user/${this.usuario!.id_usuario}`,
       datosActualizados,
       { headers }
     ).subscribe({
