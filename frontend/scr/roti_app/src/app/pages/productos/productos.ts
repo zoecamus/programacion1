@@ -4,10 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { AuthService, UserRole } from '../../services/auth.services';
 import { ProductosService, Producto, Categoria } from '../../services/productos.service';
 import { CarritoService } from '../../services/carrito.services';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
+
+interface PaginationInfo {
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
 
 @Component({
   selector: 'app-productos',
@@ -19,35 +28,45 @@ import { Subscription } from 'rxjs';
 export class ProductosComponent implements OnInit, OnDestroy {
   currentUserRole: UserRole | null = null;
   
-  // Carrito - ahora desde el servicio
   carrito: { producto: Producto, cantidad: number }[] = [];
   private carritoSubscription?: Subscription;
   mostrarCarrito: boolean = false;
   
-  // CÃ³digo promocional
   codigoPromo: string = '';
   promoAplicada: any = null;
   descuentoPromo: number = 0;
   validandoCodigo: boolean = false;
   mensajePromo: string = '';
   
-  // Modal editar producto
   mostrarModalEditar: boolean = false;
   productoEditando: Producto | null = null;
   
-  // Filtros
+  // ✅ FILTROS (se envían al backend)
   busqueda: string = '';
   categoriaSeleccionada: string = 'todas';
+  orden: string = '';
+  
+  // ✅ PAGINACIÓN (viene del backend)
+  pagination: PaginationInfo = {
+    total: 0,
+    page: 1,
+    per_page: 12,
+    total_pages: 0,
+    has_next: false,
+    has_prev: false
+  };
   
   categorias: Categoria[] = [];
   productos: Producto[] = [];
   loading: boolean = true;
   error: string = '';
 
+  private readonly API_URL = 'http://localhost:7000';
+
   constructor(
     public authService: AuthService,
     private productosService: ProductosService,
-    private carritoService: CarritoService,  // â† INYECTAR SERVICIO
+    private carritoService: CarritoService,
     private http: HttpClient,
     private router: Router
   ) {}
@@ -57,17 +76,14 @@ export class ProductosComponent implements OnInit, OnDestroy {
     this.cargarCategorias();
     this.cargarProductos();
     
-    // âœ… Suscribirse a cambios del carrito
     this.carritoSubscription = this.carritoService.getCarrito$().subscribe(
       carrito => {
         this.carrito = carrito;
-        console.log('ðŸ›’ Carrito actualizado:', carrito);
       }
     );
   }
 
   ngOnDestroy() {
-    // âœ… Cancelar suscripciÃ³n al destruir el componente
     if (this.carritoSubscription) {
       this.carritoSubscription.unsubscribe();
     }
@@ -89,52 +105,110 @@ export class ProductosComponent implements OnInit, OnDestroy {
   cargarCategorias() {
     this.productosService.getCategorias().subscribe({
       next: (data) => {
-        console.log('CategorÃ­as cargadas:', data);
         this.categorias = data;
       },
       error: (error) => {
-        console.error('Error al cargar categorÃ­as:', error);
+        console.error('Error al cargar categorías:', error);
       }
     });
   }
 
+  /**
+   * ✅ CARGAR PRODUCTOS CON FILTROS DEL BACKEND
+   */
   cargarProductos() {
     this.loading = true;
-    this.productosService.getProductos({ per_page: 100 }).subscribe({
-      next: (data) => {
-        console.log('Productos cargados:', data);
-        this.productos = data.productos || data;
+    this.error = '';
+
+    // ✅ CONSTRUIR PARAMS
+    let params = new HttpParams()
+      .set('page', this.pagination.page.toString())
+      .set('per_page', this.pagination.per_page.toString());
+
+    // Filtro por categoría
+    if (this.categoriaSeleccionada !== 'todas') {
+      params = params.set('id_categoria', this.categoriaSeleccionada);
+    }
+
+    // Búsqueda
+    if (this.busqueda.trim()) {
+      params = params.set('busqueda', this.busqueda.trim());
+    }
+
+    // Ordenamiento
+    if (this.orden) {
+      params = params.set('orden', this.orden);
+    }
+
+    console.log('📡 Cargando productos con params:', params.toString());
+
+    this.http.get<any>(`${this.API_URL}/products`, { params }).subscribe({
+      next: (response) => {
+        console.log('✅ Respuesta del backend:', response);
+        this.productos = response.productos || [];
+        this.pagination = response.pagination || this.pagination;
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al cargar productos:', error);
+        console.error('❌ Error al cargar productos:', error);
         this.error = 'Error al cargar los productos';
         this.loading = false;
       }
     });
   }
 
-  get productosFiltrados(): Producto[] {
-    let filtrados = this.productos;
+  /**
+   * ✅ APLICAR FILTROS (resetea a página 1)
+   */
+  aplicarFiltros() {
+    this.pagination.page = 1;
+    this.cargarProductos();
+  }
+
+  /**
+   * ✅ CAMBIAR PÁGINA
+   */
+  cambiarPagina(page: number) {
+    if (page >= 1 && page <= this.pagination.total_pages) {
+      this.pagination.page = page;
+      this.cargarProductos();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  /**
+   * ✅ CAMBIAR ITEMS POR PÁGINA
+   */
+  cambiarPerPage(perPage: number) {
+    this.pagination.per_page = perPage;
+    this.pagination.page = 1;
+    this.cargarProductos();
+  }
+
+  /**
+   * ✅ GENERAR ARRAY DE PÁGINAS
+   */
+  get paginas(): number[] {
+    const pages: number[] = [];
+    const current = this.pagination.page;
+    const total = this.pagination.total_pages;
     
-    if (this.currentUserRole !== 'Administrador') {
-      filtrados = filtrados.filter(p => p.stock > 0);
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, current + 2);
+    
+    if (end - start < 4) {
+      if (start === 1) {
+        end = Math.min(total, start + 4);
+      } else {
+        start = Math.max(1, end - 4);
+      }
     }
     
-    if (this.categoriaSeleccionada !== 'todas') {
-      const categoriaId = parseInt(this.categoriaSeleccionada);
-      filtrados = filtrados.filter(p => p.id_categoria === categoriaId);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
     }
     
-    if (this.busqueda) {
-      const termino = this.busqueda.toLowerCase();
-      filtrados = filtrados.filter(p => 
-        p.nombre.toLowerCase().includes(termino) || 
-        p.descripcion.toLowerCase().includes(termino)
-      );
-    }
-    
-    return filtrados;
+    return pages;
   }
 
   isAdmin(): boolean {
@@ -180,14 +254,11 @@ export class ProductosComponent implements OnInit, OnDestroy {
     
     if (this.productoEditando.id_producto > 0) {
       this.http.put<Producto>(
-        `http://localhost:7000/product/${this.productoEditando.id_producto}`,
+        `${this.API_URL}/product/${this.productoEditando.id_producto}`,
         this.productoEditando,
         { headers: this.getHeaders() }
       ).subscribe({
-        next: (productoActualizado: Producto) => {
-          this.productos = this.productos.map(p =>
-            p.id_producto === productoActualizado.id_producto ? productoActualizado : p
-          );
+        next: () => {
           alert('Producto actualizado correctamente');
           this.cerrarModalEditar();
           this.cargarProductos();
@@ -199,11 +270,11 @@ export class ProductosComponent implements OnInit, OnDestroy {
       });
     } else {
       this.http.post<Producto>(
-        'http://localhost:7000/products',
+        `${this.API_URL}/products`,
         this.productoEditando,
         { headers: this.getHeaders() }
       ).subscribe({
-        next: (nuevoProducto: Producto) => {
+        next: () => {
           alert('Producto creado correctamente');
           this.cerrarModalEditar();
           this.cargarProductos();
@@ -216,14 +287,13 @@ export class ProductosComponent implements OnInit, OnDestroy {
     }
   }
     
-  // âœ… CARRITO - Ahora usa el servicio
   agregarAlCarrito(producto: Producto) {
     const agregado = this.carritoService.agregarProducto(producto);
     
     if (agregado) {
       alert(`${producto.nombre} agregado al carrito`);
     } else {
-      alert(`No hay mÃ¡s stock disponible de ${producto.nombre}`);
+      alert(`No hay más stock disponible de ${producto.nombre}`);
     }
   }
 
@@ -237,7 +307,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
     if (!exito && cambio > 0) {
       const item = this.carrito.find(i => i.producto.id_producto === productoId);
       if (item) {
-        alert(`No hay mÃ¡s stock disponible de ${item.producto.nombre}`);
+        alert(`No hay más stock disponible de ${item.producto.nombre}`);
       }
     }
   }
@@ -256,7 +326,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   validarCodigo() {
     if (!this.codigoPromo.trim()) {
-      this.mensajePromo = 'Ingresa un cÃ³digo';
+      this.mensajePromo = 'Ingresa un código';
       return;
     }
 
@@ -269,7 +339,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
       precio: item.producto.precio
     }));
 
-    this.http.post('http://localhost:7000/validar-codigo', {
+    this.http.post(`${this.API_URL}/validar-codigo`, {
       codigo: this.codigoPromo.toUpperCase(),
       productos: productos,
       total: this.totalCarrito
@@ -278,11 +348,11 @@ export class ProductosComponent implements OnInit, OnDestroy {
         if (response.valido) {
           this.promoAplicada = response.promocion;
           this.descuentoPromo = response.descuento;
-          this.mensajePromo = `âœ“ ${response.mensaje}`;
+          this.mensajePromo = `✓ ${response.mensaje}`;
         }
       },
       error: (error) => {
-        this.mensajePromo = error.error?.mensaje || 'CÃ³digo no vÃ¡lido';
+        this.mensajePromo = error.error?.mensaje || 'Código no válido';
         this.promoAplicada = null;
         this.descuentoPromo = 0;
       },
@@ -301,13 +371,13 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   finalizarCompra() {
     if (this.carrito.length === 0) {
-      alert('El carrito estÃ¡ vacÃ­o');
+      alert('El carrito está vacío');
       return;
     }
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      alert('Debes iniciar sesiÃ³n para realizar un pedido');
+      alert('Debes iniciar sesión para realizar un pedido');
       return;
     }
 
@@ -331,19 +401,18 @@ export class ProductosComponent implements OnInit, OnDestroy {
       nuevoPedido.descuento = this.descuentoPromo;
     }
 
-    this.http.post('http://localhost:7000/pedidos', nuevoPedido, { headers: this.getHeaders() }).subscribe({
+    this.http.post(`${this.API_URL}/pedidos`, nuevoPedido, { headers: this.getHeaders() }).subscribe({
       next: (response) => {
-        let mensaje = `Â¡Pedido realizado con Ã©xito!\n\nSubtotal: $${this.totalCarrito.toLocaleString('es-AR')}`;
+        let mensaje = `¡Pedido realizado con éxito!\n\nSubtotal: $${this.totalCarrito.toLocaleString('es-AR')}`;
         
         if (this.descuentoPromo > 0) {
           mensaje += `\nDescuento (${this.promoAplicada.codigo}): -$${this.descuentoPromo.toLocaleString('es-AR')}`;
         }
         
-        mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando estÃ© listo.`;
+        mensaje += `\nTotal: $${this.totalConDescuento.toLocaleString('es-AR')}\n\nPuedes retirar tu pedido cuando esté listo.`;
         
         alert(mensaje);
         
-        // âœ… Vaciar carrito usando el servicio
         this.carritoService.vaciarCarrito();
         this.quitarPromo();
         this.mostrarCarrito = false;
@@ -362,7 +431,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
 
   getNombreCategoria(id_categoria: number): string {
     const categoria = this.categorias.find(c => c.id_categoria === id_categoria);
-    return categoria ? categoria.nombre : 'Sin categorÃ­a';
+    return categoria ? categoria.nombre : 'Sin categoría';
   }
 
   getImagenProducto(nombreProducto: string): string {
@@ -394,13 +463,9 @@ export class ProductosComponent implements OnInit, OnDestroy {
     this.router.navigate(['/mi-cuenta']);
   }
 
-  /**
- * Cerrar sesión
- */
   cerrarSesion() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
       this.authService.logout();
     }
   }
-
 }

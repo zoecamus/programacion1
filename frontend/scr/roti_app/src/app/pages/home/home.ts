@@ -33,53 +33,74 @@ interface Promocion {
 })
 export class HomeComponent implements OnInit {
   
-  productosDestacados: Producto[] = [];
+  // ✅ PRODUCTOS MÁS PEDIDOS
+  productosMasPedidos: Producto[] = [];
+  loadingMasPedidos = true;
+
+  // ✅ PRODUCTOS MEJOR VALORADOS
+  productosMejorValorados: Producto[] = [];
+  loadingMejorValorados = true;
+
   promociones: Promocion[] = [];
-  loading = true;
+  error = '';
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private http: HttpClient
   ) {
+    // ✅ COMENTADO: No redirigir automáticamente
     /*
     if (this.authService.isLoggedIn()) {
       console.log('👤 Usuario ya logueado, redirigiendo...');
       const redirectUrl = this.authService.getRedirectUrl();
       this.router.navigate([redirectUrl]);
     }
-      */
+    */
   }
 
   ngOnInit() {
-    this.cargarProductosDestacados();
-    //this.cargarPromociones();//
+    this.cargarProductosMasPedidos();
+    this.cargarProductosMejorValorados();
+    // this.cargarPromociones(); // Descomentar si quieres promociones
   }
 
-  cargarProductosDestacados() {
-    // Obtener productos con más pedidos del backend
-    this.http.get<any>('http://localhost:7000/products?per_page=4').subscribe({
+  /**
+   * ✅ CARGAR PRODUCTOS MÁS PEDIDOS DEL BACKEND
+   */
+  cargarProductosMasPedidos() {
+    this.loadingMasPedidos = true;
+    
+    // ✅ Llamar al backend con filtro mas_vendidos=true
+    this.http.get<any>('http://localhost:7000/products?mas_vendidos=true&per_page=4').subscribe({
       next: (response) => {
-        const productos = response.productos || response;
-        
-        // Ordenar por más pedidos (si el campo existe) o por stock descendente
-        this.productosDestacados = productos
-          .sort((a: Producto, b: Producto) => {
-            // Si tienen campo total_pedidos, ordenar por eso
-            if (a.total_pedidos !== undefined && b.total_pedidos !== undefined) {
-              return b.total_pedidos - a.total_pedidos;
-            }
-            // Sino, ordenar por stock (más stock = más vendido probablemente)
-            return b.stock - a.stock;
-          })
-          .slice(0, 4); // Solo los primeros 4
-        
-        this.loading = false;
-        console.log('✅ Productos cargados:', this.productosDestacados);
+        this.productosMasPedidos = response.productos || response;
+        this.loadingMasPedidos = false;
+        console.log('🔥 Productos más pedidos:', this.productosMasPedidos);
       },
       error: (error) => {
-        console.error('❌ Error al cargar productos:', error);
-        this.loading = false;
+        console.error('❌ Error al cargar productos más pedidos:', error);
+        this.loadingMasPedidos = false;
+      }
+    });
+  }
+
+  /**
+   * ✅ CARGAR PRODUCTOS MEJOR VALORADOS DEL BACKEND
+   */
+  cargarProductosMejorValorados() {
+    this.loadingMejorValorados = true;
+    
+    // ✅ Llamar al backend con filtro mejor_valorados=true
+    this.http.get<any>('http://localhost:7000/products?mejor_valorados=true&per_page=4').subscribe({
+      next: (response) => {
+        this.productosMejorValorados = response.productos || response;
+        this.loadingMejorValorados = false;
+        console.log('⭐ Productos mejor valorados:', this.productosMejorValorados);
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar productos mejor valorados:', error);
+        this.loadingMejorValorados = false;
       }
     });
   }

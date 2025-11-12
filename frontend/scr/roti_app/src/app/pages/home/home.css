@@ -638,3 +638,147 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* Spinner de carga */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #FF6B35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Sección con fondo gris claro */
+.bg-light {
+  background: #f9fafb;
+}
+
+/* Icono de sección */
+.section-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Badge de producto más pedido (fuego) */
+.badge-fire {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.badge-fire i {
+  animation: fire-flicker 1.5s infinite;
+}
+
+@keyframes fire-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Badge de producto mejor valorado (estrella) */
+.badge-star {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #182230;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0%, 100% { box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 4px 20px rgba(255, 215, 0, 0.8); }
+}
+
+.badge-star i {
+  animation: star-twinkle 1.5s infinite;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Ajuste de espaciado para secciones */
+.menu-section {
+  padding: 4rem 2rem;
+}
+
+.menu-section.bg-light {
+  padding: 4rem 2rem;
+  margin: 0;
+}
+
+/* Botón de ver menú completo */
+.btn-ver-menu-completo {
+  background: linear-gradient(135deg, #FF6B35 0%, #ff8c42 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2.5rem;
+  border-radius: 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-ver-menu-completo:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .section-icon {
+    font-size: 2rem;
+  }
+  
+  .badge-fire,
+  .badge-star {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+}

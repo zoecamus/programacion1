@@ -1,199 +1,260 @@
 <!-- NAVBAR -->
 <nav class="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <i class="bi bi-egg-fried"></i>
+      <span>La Roti</span>
+    </div>
+    
+    <div class="navbar-menu">
+      <a (click)="scrollTo('inicio')" class="nav-link">Inicio</a>
+      <a (click)="scrollTo('mas-pedidos')" class="nav-link">Más Pedidos</a>
+      <a (click)="scrollTo('mejor-valorados')" class="nav-link">Mejor Valorados</a>
+    </div>
+    
+    <div class="navbar-actions">
+      <button class="btn-primary" (click)="irALogin()">
+        <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section id="inicio" class="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <h1 class="hero-title">
+        <span class="hero-subtitle">Bienvenido a</span>
+        <span class="hero-main">La Roti</span>
+      </h1>
+      <p class="hero-description">
+        A quien madruga, Dios le ayuda... pero si te quedas dormido, La Roti te salva el almuerzo<br>
+        <strong>¡Pedí online y retirá en el local!</strong>
+      </p>
+    </div>
+    <div class="hero-image">
+      <img src="assets/productos/rotiBurger.png" alt="Hamburguesa La Roti" class="hero-burger">
+    </div>
+  </div>
+</section>
+
+<!-- ✅ PRODUCTOS MÁS PEDIDOS -->
+<section id="mas-pedidos" class="menu-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">🔥</div>
+      <h2 class="section-title">Los Más Pedidos</h2>
+      <p class="section-subtitle">Nuestros productos favoritos de los clientes</p>
+    </div>
+    
+    <!-- Loading -->
+    <div *ngIf="loadingMasPedidos" style="text-align: center; padding: 3rem;">
+      <div class="spinner"></div>
+      <p style="color: #6b7280; margin-top: 1rem;">Cargando productos...</p>
+    </div>
+    
+    <!-- Productos más pedidos -->
+    <div class="productos-grid" *ngIf="!loadingMasPedidos && productosMasPedidos.length > 0">
+      <div class="producto-card" *ngFor="let producto of productosMasPedidos">
+        <div class="producto-image-container">
+          <img [src]="getImagenProducto(producto.nombre)" 
+               [alt]="producto.nombre" 
+               class="producto-image"
+               (error)="$event.target.src='assets/logo/producto-default.png'">
+          <div class="producto-overlay">
+            <button class="btn-quick-view" (click)="verMenu()">
+              <i class="bi bi-eye"></i> Ver más
+            </button>
+          </div>
+          <!-- Badge de más pedido -->
+          <div class="badge-fire">
+            <i class="bi bi-fire"></i> Popular
+          </div>
+        </div>
+        <div class="producto-info">
+          <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+          <p class="producto-descripcion">{{ producto.descripcion }}</p>
+          <div class="producto-footer">
+            <span class="producto-precio">${{ producto.precio.toLocaleString('es-AR') }}</span>
+            <button class="btn-add-cart" (click)="verMenu()">
+              <i class="bi bi-cart-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sin productos -->
+    <div *ngIf="!loadingMasPedidos && productosMasPedidos.length === 0" style="text-align: center; padding: 3rem;">
+      <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: #6b7280;"></i>
+      <p style="color: #6b7280; margin-top: 1rem;">No hay productos disponibles</p>
+    </div>
+  </div>
+</section>
+
+<!-- ✅ PRODUCTOS MEJOR VALORADOS -->
+<section id="mejor-valorados" class="menu-section bg-light">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-icon">⭐</div>
+      <h2 class="section-title">Mejor Valorados</h2>
+      <p class="section-subtitle">Los productos con mejores reseñas</p>
+    </div>
+    
+    <!-- Loading -->
+    <div *ngIf="loadingMejorValorados" style="text-align: center; padding: 3rem;">
+      <div class="spinner"></div>
+      <p style="color: #6b7280; margin-top: 1rem;">Cargando productos...</p>
+    </div>
+    
+    <!-- Productos mejor valorados -->
+    <div class="productos-grid" *ngIf="!loadingMejorValorados && productosMejorValorados.length > 0">
+      <div class="producto-card" *ngFor="let producto of productosMejorValorados">
+        <div class="producto-image-container">
+          <img [src]="getImagenProducto(producto.nombre)" 
+               [alt]="producto.nombre" 
+               class="producto-image"
+               (error)="$event.target.src='assets/logo/producto-default.png'">
+          <div class="producto-overlay">
+            <button class="btn-quick-view" (click)="verMenu()">
+              <i class="bi bi-eye"></i> Ver más
+            </button>
+          </div>
+          <!-- Badge de mejor valorado -->
+          <div class="badge-star">
+            <i class="bi bi-star-fill"></i> Top
+          </div>
+        </div>
+        <div class="producto-info">
+          <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+          <p class="producto-descripcion">{{ producto.descripcion }}</p>
+          <div class="producto-footer">
+            <span class="producto-precio">${{ producto.precio.toLocaleString('es-AR') }}</span>
+            <button class="btn-add-cart" (click)="verMenu()">
+              <i class="bi bi-cart-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sin productos -->
+    <div *ngIf="!loadingMejorValorados && productosMejorValorados.length === 0" style="text-align: center; padding: 3rem;">
+      <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: #6b7280;"></i>
+      <p style="color: #6b7280; margin-top: 1rem;">No hay productos disponibles</p>
+    </div>
+    
+    <!-- CTA para ver menú completo -->
+    <div class="menu-cta">
+      <button class="btn-ver-menu-completo" (click)="verMenu()">
+        <i class="bi bi-grid-3x3-gap me-2"></i>Ver Menú Completo
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- PROMOCIONES -->
+<section id="promociones" class="promociones-section" *ngIf="promociones.length > 0">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Promociones Activas</h2>
+      <p class="section-subtitle">Aprovechá nuestros descuentos especiales</p>
+    </div>
+    
+    <div class="promociones-grid">
+      <div class="promocion-card" *ngFor="let promo of promociones">
+        <div class="promocion-badge">
+          {{ getTipoDescuentoTexto(promo) }}
+        </div>
+        <div class="promocion-content">
+          <h3 class="promocion-codigo">{{ promo.codigo }}</h3>
+          <p class="promocion-descripcion">{{ promo.descripcion }}</p>
+          <div class="promocion-footer">
+            <span class="promocion-valido">
+              <i class="bi bi-calendar-check"></i>
+              Válido hasta {{ promo.fecha_fin | date:'dd/MM/yyyy' }}
+            </span>
+            <button class="btn-usar-promo" (click)="verMenu()">
+              <i class="bi bi-tag-fill me-1"></i>Usar ahora
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARACTERÍSTICAS -->
+<section class="features-section">
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <h3 class="feature-title">Pedidos Rápidos</h3>
+        <p class="feature-description">Hacé tu pedido online y retiralo en minutos</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="bi bi-shield-check"></i>
+        </div>
+        <h3 class="feature-title">Calidad Garantizada</h3>
+        <p class="feature-description">Ingredientes frescos y de primera calidad</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <h3 class="feature-title">Mejores Precios</h3>
+        <p class="feature-description">Promociones exclusivas online</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="bi bi-shop"></i>
+        </div>
+        <h3 class="feature-title">Retiro en Local</h3>
+        <p class="feature-description">Retirá tu pedido cuando esté listo</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CALL TO ACTION FINAL -->
+<section class="cta-final-section">
+  <div class="container">
+    <div class="cta-final-content">
+      <h2>¿Listo para disfrutar?</h2>
+      <p>Iniciá sesión y empezá a pedir tus productos favoritos</p>
+      <button class="btn-cta-large" (click)="irALogin()">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+      </button>
+      <p class="cta-register">
+        ¿No tenés cuenta? Podés registrarte desde la página de inicio de sesión
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-brand">
         <i class="bi bi-egg-fried"></i>
         <span>La Roti</span>
       </div>
-      
-      <div class="navbar-menu">
-        <a (click)="scrollTo('inicio')" class="nav-link">Inicio</a>
-        <a (click)="scrollTo('menu')" class="nav-link">Menú</a>        
-      </div>
-      
-      <div class="navbar-actions">
-        <button class="btn-primary" (click)="irALogin()">
-          <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
-        </button>
-      </div>
+      <p class="footer-text">
+        Sistema de pedidos online
+      </p>
+      <p class="footer-copy">
+        © 2025 La Roti. Todos los derechos reservados.
+      </p>
     </div>
-  </nav>
-  
-  <!-- HERO SECTION -->
-  <section id="inicio" class="hero">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-      <div class="hero-text">
-        <h1 class="hero-title">
-          <span class="hero-subtitle">Bienvenido a</span>
-          <span class="hero-main">La Roti</span>
-        </h1>
-        <p class="hero-description">
-          A quien madruga, Dios le ayuda... pero si te quedas dormido, La Roti te salva el almuerzo<br>
-          <strong>¡Pedí online y retirá en el local!</strong>
-        </p>
-      </div>
-      <div class="hero-image">
-        <img src="assets/productos/rotiBurger.png" alt="Hamburguesa La Roti" class="hero-burger">
-      </div>
-    </div>
-  </section>
-  
-  <!-- PRODUCTOS DESTACADOS -->
-  <section id="menu" class="menu-section">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">Nuestro Menú</h2>
-        <p class="section-subtitle">Los productos más pedidos</p>
-      </div>
-      
-      <!-- Loading -->
-      <div *ngIf="loading" style="text-align: center; padding: 3rem;">
-        <div class="spinner"></div>
-        <p style="color: #6b7280; margin-top: 1rem;">Cargando productos...</p>
-      </div>
-      
-      <!-- Productos del backend -->
-      <div class="productos-grid" *ngIf="!loading && productosDestacados.length > 0">
-        <div class="producto-card" *ngFor="let producto of productosDestacados">
-          <div class="producto-image-container">
-            <img [src]="getImagenProducto(producto.nombre)" 
-                 [alt]="producto.nombre" 
-                 class="producto-image"
-                 (error)="$event.target.src='assets/logo/producto-default.png'">
-            <div class="producto-overlay">
-              <button class="btn-quick-view" (click)="verMenu()">
-                <i class="bi bi-eye"></i> Ver más
-              </button>
-            </div>
-          </div>
-          <div class="producto-info">
-            <h3 class="producto-nombre">{{ producto.nombre }}</h3>
-            <p class="producto-descripcion">{{ producto.descripcion }}</p>
-            <div class="producto-footer">
-              <span class="producto-precio">${{ producto.precio.toLocaleString('es-AR') }}</span>
-              <button class="btn-add-cart" (click)="verMenu()">
-                <i class="bi bi-cart-plus"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Sin productos -->
-      <div *ngIf="!loading && productosDestacados.length === 0" style="text-align: center; padding: 3rem;">
-        <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: #6b7280;"></i>
-        <p style="color: #6b7280; margin-top: 1rem;">No hay productos disponibles</p>
-      </div>
-      
-      <div class="menu-cta">
-        <button class="btn-ver-menu-completo" (click)="verMenu()">
-          <i class="bi bi-grid-3x3-gap me-2"></i>Ver Menú Completo
-        </button>
-      </div>
-    </div>
-  </section>
-  
-  <!-- PROMOCIONES -->
-  <section id="promociones" class="promociones-section" *ngIf="promociones.length > 0">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">Promociones Activas</h2>
-        <p class="section-subtitle">Aprovechá nuestros descuentos especiales</p>
-      </div>
-      
-      <div class="promociones-grid">
-        <div class="promocion-card" *ngFor="let promo of promociones">
-          <div class="promocion-badge">
-            {{ getTipoDescuentoTexto(promo) }}
-          </div>
-          <div class="promocion-content">
-            <h3 class="promocion-codigo">{{ promo.codigo }}</h3>
-            <p class="promocion-descripcion">{{ promo.descripcion }}</p>
-            <div class="promocion-footer">
-              <span class="promocion-valido">
-                <i class="bi bi-calendar-check"></i>
-                Válido hasta {{ promo.fecha_fin | date:'dd/MM/yyyy' }}
-              </span>
-              <button class="btn-usar-promo" (click)="verMenu()">
-                <i class="bi bi-tag-fill me-1"></i>Usar ahora
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  
-  <!-- CARACTERÍSTICAS -->
-  <section class="features-section">
-    <div class="container">
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="bi bi-clock-history"></i>
-          </div>
-          <h3 class="feature-title">Pedidos Rápidos</h3>
-          <p class="feature-description">Hacé tu pedido online y retiralo en minutos</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="bi bi-shield-check"></i>
-          </div>
-          <h3 class="feature-title">Calidad Garantizada</h3>
-          <p class="feature-description">Ingredientes frescos y de primera calidad</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="bi bi-wallet2"></i>
-          </div>
-          <h3 class="feature-title">Mejores Precios</h3>
-          <p class="feature-description">Promociones exclusivas online</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="bi bi-shop"></i>
-          </div>
-          <h3 class="feature-title">Retiro en Local</h3>
-          <p class="feature-description">Retirá tu pedido cuando esté listo</p>
-        </div>
-      </div>
-    </div>
-  </section>
-  
-  <!-- CALL TO ACTION FINAL -->
-  <section class="cta-final-section">
-    <div class="container">
-      <div class="cta-final-content">
-        <h2>¿Listo para disfrutar?</h2>
-        <p>Iniciá sesión y empezá a pedir tus productos favoritos</p>
-        <button class="btn-cta-large" (click)="irALogin()">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-        </button>
-        <p class="cta-register">
-          ¿No tenés cuenta? Podés registrarte desde la página de inicio de sesión
-        </p>
-      </div>
-    </div>
-  </section>
-  
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <i class="bi bi-egg-fried"></i>
-          <span>La Roti</span>
-        </div>
-        <p class="footer-text">
-          Sistema de pedidos online
-        </p>
-        <p class="footer-copy">
-          © 2025 La Roti. Todos los derechos reservados.
-        </p>
-      </div>
-    </div>
-  </footer>
+  </div>
+</footer>
